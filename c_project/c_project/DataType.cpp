@@ -29,7 +29,7 @@ int main()
     cout << "Size of double : " << sizeof(double) << endl;
     cout << "Size of wchar_t : " << sizeof(wchar_t) << endl;
     
-//    您可以使用 typedef 为一个已有的类型取一个新的名字。下面是使用 typedef 定义一个新类型的语法：
+//    您可以使用 typedef 为一个已有的类型取一个新的名字。下面是使用 typedef 定义一个新类型的语法：666
     typedef int feet;
     feet f = 5;
     cout << "feet: " << f << endl;
