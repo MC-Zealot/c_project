@@ -9,6 +9,7 @@
 #include "hello.hpp"
 
 #include <iostream>
+#define MAX_VALUE 100
 using namespace std;
 int main()
 {
@@ -45,6 +46,9 @@ int main()
     clr = yellow;
     
     cout << clr << endl;
-    
+    const string s = "str";
+//    s="123";
+    cout << "s: " << s << endl;
+    cout << MAX_VALUE << endl;
     return 0;
 }

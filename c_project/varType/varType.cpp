@@ -15,6 +15,12 @@ using namespace std;
 extern int a, b;
 extern int c;
 extern float f;
+int a,b;//全局变量
+static int a1,b1;//静态全局变量
+const int a2=23;//全局常量
+const static int a3=22;//静态全局常量
+char*s3;
+char*s="hello";//s是全局变量，"hello"在常量区
 int main()
 {
     cout << "Hello World!!\n";
@@ -28,10 +34,10 @@ int main()
 	b = 20;
 	c = a + b;
 				    
-	cout << c << endl ;
+	cout << c << endl;
 	f = 70.0/3.0;
-	cout << f << endl ;
-					   
+	cout << f << endl;
+	cout << a3 << endl;				   
 	return 0;
 }
 
