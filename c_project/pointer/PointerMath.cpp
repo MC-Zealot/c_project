@@ -5,10 +5,10 @@ using namespace std;
 int main()
 {
 	//int a = 1;
-	char cc[] = {'a','b'};
+	int cc[] = {1,2,3};
 	cout << cc<< endl;
 	int *p;
-	p=&cc;
+	p=cc;
 
 	cout << "cc address: "<<&cc << endl;
 	cout << &p << ": " << *p << endl;

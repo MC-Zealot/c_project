@@ -22,6 +22,11 @@ int main()
     cout << &p << ": " << *p << endl;
     p++;
     cout << &p << ": " << *p << endl;
+    
     cout << cc << endl;
+    
+    int  var[3] = {10, 100, 200};
+    
+    
     return 0;
 }
