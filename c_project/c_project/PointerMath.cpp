@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <iostream>
 
+
 using namespace std;
 
 int main()
@@ -27,6 +28,10 @@ int main()
     
     int  var[3] = {10, 100, 200};
     
+    string *str;
     
+    printf(str)
+//    printf(str,"%u-1", 3);
+    cout << str;
     return 0;
 }
