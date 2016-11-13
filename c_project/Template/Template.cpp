@@ -3,8 +3,8 @@
 
 using namespace std;
 
-		template <typename T>
-inline T const& Max (T const& a, T const& b) 
+template <typename T>
+inline T const& Max (T const& a, T const& b) //内连函数，提升性能，免去参数压栈，跳转至新地址，返回地址，出栈等开销
 { 
 		return a < b ? b:a; 
 } 
