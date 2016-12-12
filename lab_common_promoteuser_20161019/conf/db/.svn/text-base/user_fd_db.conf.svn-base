@@ -1,0 +1,7 @@
+db_name : userfeature.dat
+dump_folder : /data1/wangke/lab_common_so/data/
+
+db_num : 1
+db_id_0 : userfd
+db_path_0 : userfeature.dat
+

@@ -1,0 +1,23 @@
+# select redis cluster
+[main]
+cluster = online_slave
+
+# cluster for online
+[online_master] # yongfeng
+server_group = rm11700.eos.grid.sina.com.cn:11700,rm11701.eos.grid.sina.com.cn:11701,rm11702.eos.grid.sina.com.cn:11702,rm11703.eos.grid.sina.com.cn:11703,rm11704.eos.grid.sina.com.cn:11704,rm11705.eos.grid.sina.com.cn:11705,rm11706.eos.grid.sina.com.cn:11706,rm11707.eos.grid.sina.com.cn:11707,rm11708.eos.grid.sina.com.cn:11708,rm11709.eos.grid.sina.com.cn:11709,rm11710.eos.grid.sina.com.cn:11710,rm11711.eos.grid.sina.com.cn:11711,rm11712.eos.grid.sina.com.cn:11712,rm11713.eos.grid.sina.com.cn:11713,rm11714.eos.grid.sina.com.cn:11714,rm11715.eos.grid.sina.com.cn:11715,rm11716.eos.grid.sina.com.cn:11716,rm11717.eos.grid.sina.com.cn:11717,rm11718.eos.grid.sina.com.cn:11718,rm11719.eos.grid.sina.com.cn:11719,rm11720.eos.grid.sina.com.cn:11720,rm11721.eos.grid.sina.com.cn:11721,rm11722.eos.grid.sina.com.cn:11722,rm11723.eos.grid.sina.com.cn:11723,rm11724.eos.grid.sina.com.cn:11724,rm11725.eos.grid.sina.com.cn:11725,rm11726.eos.grid.sina.com.cn:11726,rm11727.eos.grid.sina.com.cn:11727,rm11728.eos.grid.sina.com.cn:11728,rm11729.eos.grid.sina.com.cn:11729,rm11730.eos.grid.sina.com.cn:11730,rm11731.eos.grid.sina.com.cn:11731,rm11732.eos.grid.sina.com.cn:11732,rm11733.eos.grid.sina.com.cn:11733,rm11734.eos.grid.sina.com.cn:11734,rm11735.eos.grid.sina.com.cn:11735,rm11736.eos.grid.sina.com.cn:11736,rm11737.eos.grid.sina.com.cn:11737,rm11738.eos.grid.sina.com.cn:11738,rm11739.eos.grid.sina.com.cn:11739
+
+[online_slave] # tucheng
+server_group = rs11700.hebe.grid.sina.com.cn:11700,rs11701.hebe.grid.sina.com.cn:11701,rs11702.hebe.grid.sina.com.cn:11702,rs11703.hebe.grid.sina.com.cn:11703,rs11704.hebe.grid.sina.com.cn:11704,rs11705.hebe.grid.sina.com.cn:11705,rs11706.hebe.grid.sina.com.cn:11706,rs11707.hebe.grid.sina.com.cn:11707,rs11708.hebe.grid.sina.com.cn:11708,rs11709.hebe.grid.sina.com.cn:11709,rs11710.hebe.grid.sina.com.cn:11710,rs11711.hebe.grid.sina.com.cn:11711,rs11712.hebe.grid.sina.com.cn:11712,rs11713.hebe.grid.sina.com.cn:11713,rs11714.hebe.grid.sina.com.cn:11714,rs11715.hebe.grid.sina.com.cn:11715,rs11716.hebe.grid.sina.com.cn:11716,rs11717.hebe.grid.sina.com.cn:11717,rs11718.hebe.grid.sina.com.cn:11718,rs11719.hebe.grid.sina.com.cn:11719,rs11720.hebe.grid.sina.com.cn:11720,rs11721.hebe.grid.sina.com.cn:11721,rs11722.hebe.grid.sina.com.cn:11722,rs11723.hebe.grid.sina.com.cn:11723,rs11724.hebe.grid.sina.com.cn:11724,rs11725.hebe.grid.sina.com.cn:11725,rs11726.hebe.grid.sina.com.cn:11726,rs11727.hebe.grid.sina.com.cn:11727,rs11728.hebe.grid.sina.com.cn:11728,rs11729.hebe.grid.sina.com.cn:11729,rs11730.hebe.grid.sina.com.cn:11730,rs11731.hebe.grid.sina.com.cn:11731,rs11732.hebe.grid.sina.com.cn:11732,rs11733.hebe.grid.sina.com.cn:11733,rs11734.hebe.grid.sina.com.cn:11734,rs11735.hebe.grid.sina.com.cn:11735,rs11736.hebe.grid.sina.com.cn:11736,rs11737.hebe.grid.sina.com.cn:11737,rs11738.hebe.grid.sina.com.cn:11738,rs11739.hebe.grid.sina.com.cn:11739
+
+[online_master_with_ip] # yongfeng
+server_group = 10.75.26.133:11700,10.75.26.133:11701,10.75.26.133:11702,10.75.26.133:11703,10.75.26.133:11704,10.75.26.133:11705,10.75.26.133:11706,10.75.26.133:11707,10.75.26.134:11708,10.75.26.134:11709,10.75.26.134:11710,10.75.26.134:11711,10.75.26.134:11712,10.75.26.134:11713,10.75.26.134:11714,10.75.26.134:11715,10.75.26.135:11716,10.75.26.135:11717,10.75.26.135:11718,10.75.26.135:11719,10.75.26.135:11720,10.75.26.135:11721,10.75.26.135:11722,10.75.26.135:11723,10.75.26.136:11724,10.75.26.136:11725,10.75.26.136:11726,10.75.26.136:11727,10.75.26.136:11728,10.75.26.136:11729,10.75.26.136:11730,10.75.26.136:11731,10.75.26.137:11732,10.75.26.137:11733,10.75.26.137:11734,10.75.26.137:11735,10.75.26.137:11736,10.75.26.137:11737,10.75.26.137:11738,10.75.26.137:11739
+
+[online_slave_with_ip] # tucheng
+server_group = 10.73.29.71:11700,10.73.29.71:11701,10.73.29.71:11702,10.73.29.71:11703,10.73.29.71:11704,10.73.29.71:11705,10.73.29.71:11706,10.73.29.71:11707,10.73.29.72:11708,10.73.29.72:11709,10.73.29.72:11710,10.73.29.72:11711,10.73.29.72:11712,10.73.29.72:11713,10.73.29.72:11714,10.73.29.72:11715,10.73.29.73:11716,10.73.29.73:11717,10.73.29.73:11718,10.73.29.73:11719,10.73.29.73:11720,10.73.29.73:11721,10.73.29.73:11722,10.73.29.73:11723,10.73.29.74:11724,10.73.29.74:11725,10.73.29.74:11726,10.73.29.74:11727,10.73.29.74:11728,10.73.29.74:11729,10.73.29.74:11730,10.73.29.74:11731,10.73.29.75:11732,10.73.29.75:11733,10.73.29.75:11734,10.73.29.75:11735,10.73.29.75:11736,10.73.29.75:11737,10.73.29.75:11738,10.73.29.75:11739
+[online_rts_controller] # beixian
+server_group = 10.13.40.133:16380
+
+# cluster for test
+[test]
+server_group = 10.13.40.136:11700,10.13.40.136:11701
+

@@ -1,0 +1,323 @@
+#include "fanstarget_ad_algorithm_interface.h"
+
+DYN_ALGORITHMS(FansTargetAlgorithmInterface);
+
+int FansTargetAlgorithmInterface::algorithm_core(uint64_t req_id,const AccessStr& access_str, VEC_CAND& vec_cand)
+{
+	return 1;	
+}
+
+int FansTargetAlgorithmInterface::algorithm_core_new(uint64_t req_id, 
+				const AccessInfo* access_info, const VEC_CAND& input_vec, VEC_CAND& output_vec)
+{
+	struct timeval start_time;
+	gettimeofday(&start_time,NULL);
+	ACCESS_INFO* ai = (ACCESS_INFO*)access_info;
+	uint16_t num = ai->num;
+    //1. 分包，将集合分为 客户包，不能完成包
+    VEC_CAND fen_tiao;
+    VEC_CAND insuff_impression;
+    VEC_CAND::const_iterator impression; //指向  buy_amout / max_package 最大的订单,或者高级定向包
+	set<string> advanced;	//高级定向包实际adid个数
+    double max_occupy_ratio = 0.0;  // 记录  buy_amount / max_package 最大值
+	uint64_t need_butou = 0;        //需要补投总量
+
+    for(VEC_CAND::const_iterator it = input_vec.begin();
+        it != input_vec.end(); ++it){
+		Fans_Tar_Ad * ft = (Fans_Tar_Ad*)(*it);
+		//LOG_ERROR("adid:%s",ft->adid.c_str());
+		need_butou += (ft->buy_amount - ft->finish_amount);
+        if(ft->type == 0){
+            fen_tiao.push_back(*it);
+            //高级定向包
+			if(ft->field_id !=""){
+				advanced.insert(ft->adid);
+				impression = it;
+				continue;
+			}
+			//最大包
+            double ratio = double(ft->buy_amount) / double(ft->max_package + 3.0);
+            if((advanced.size()==0) &&ratio > max_occupy_ratio){
+                impression = it;
+                max_occupy_ratio = ratio;
+            }
+        }else{
+			if(ft->finish_amount < (ft->buy_amount * 0.8))
+            	insuff_impression.push_back(*it);
+        }
+    }
+	uint32_t flag = advanced.size();	//高级定向包的个数 
+	double threshold = need_butou * 5.0 / FLOW_AMOUNT;
+    //2. 粉条包为空，投放曝光不足
+    
+	if(fen_tiao.size() == 0){
+        //2.1 低频次,投放最慢的
+        if(ai->impression_counts < MIN_FREQUENCY){
+            if(insuff_impression.size() == 0){
+                // 2.11 曝光不足为空，直接返回
+                LOG_ERROR("1 UID:%"PRIu64" counts:%"PRIu32" num:%"PRIu16" return 0", 
+				ai->come_uid,ai->impression_counts,num);
+				so_consume_time(start_time);
+                return 1;   
+            }else{
+				double chance = get_random();
+				if(chance <= threshold){
+					slow_order(insuff_impression,output_vec);
+					Fans_Tar_Ad* result = (Fans_Tar_Ad*)(*output_vec.begin());
+					if(result == NULL){
+						LOG_ERROR("20 UID:%"PRIu64" counts:%"PRIu32" num:%"PRIu16" return 0 result is NULL", 
+						ai->come_uid,ai->impression_counts,num);
+						return 1;
+					}
+					LOG_ERROR("2 UID:%"PRIu64" counts:%"PRIu32" order_uid:%"PRIu64" adid:%s mid:%s num:%"PRIu16" field:%s return 1",
+						ai->come_uid, ai->impression_counts,result->order_uid, result->adid.c_str(), result->mid.c_str(),num, result->field_id.c_str());
+					// 2.12 选取曝光不足最慢的，返回. 这里没有非粉订单，不补充
+					algorithm_log(output_vec,2,num);
+					so_consume_time(start_time);
+					return 1;
+				}else{
+					LOG_ERROR("20 UID:%"PRIu64" counts:%"PRIu32" num:%"PRIu16" return 0 probability reject",
+						ai->come_uid,ai->impression_counts,num);
+					high_quality_user(ai->come_uid, insuff_impression, output_vec);
+					if(output_vec.size() > 0){
+						algorithm_log(output_vec, 7, num);
+						//LOG_ERROR("27 UID:%"PRIu64" counts:%"PRIu32" num:%"PRIu16" return 0 probability reject",
+						//ai->come_uid,ai->impression_counts,num);
+						Fans_Tar_Ad* result = (Fans_Tar_Ad*)(*output_vec.begin());
+						LOG_ERROR("7 UID:%"PRIu64" counts:%"PRIu32" order_uid:%"PRIu64" adid:%s mid:%s num:%"PRIu16" field:%s return 1",
+								ai->come_uid, ai->impression_counts,result->order_uid, result->adid.c_str(), result->mid.c_str(),num, result->field_id.c_str());
+					}
+					so_consume_time(start_time);
+					//LOG_ERROR("__return 1__");
+					return 1;
+				}
+            }
+
+        }else{
+            //2.2 非低频 ,不曝光
+            LOG_ERROR("3 UID:%"PRIu64" counts:%"PRIu32" num:%"PRIu16" return 0", ai->come_uid,ai->impression_counts,num);
+			so_consume_time(start_time);
+            return 1;   
+        }
+    }
+
+    // 3. 投非粉包
+    //3.1 高级定向包/最大包
+	if(flag > 0 || max_occupy_ratio >= BUY_OCCUPY_MAX_PACKAGE){
+        output_vec.push_back(*impression);
+		Fans_Tar_Ad* result = (Fans_Tar_Ad*)(*impression);
+		//有非粉，按照num补足非粉
+		supply_order(num,flag,fen_tiao,output_vec);
+		if(result == NULL){
+            LOG_ERROR("40 UID:%"PRIu64" counts:%"PRIu32" num:%"PRIu16" return 0 result is NULL", 
+					ai->come_uid,ai->impression_counts,num);
+			return 1;
+		}
+        LOG_ERROR("4 UID:%"PRIu64" counts:%"PRIu32" order_uid:%"PRIu64" adid:%s mid:%s num:%"PRIu16" return %u field:%s",
+		ai->come_uid, ai->impression_counts,result->order_uid, result->adid.c_str(),
+		result->mid.c_str(),num,output_vec.size(),result->field_id.c_str());
+
+		algorithm_log(output_vec,4,num);
+		so_consume_time(start_time);
+        return 1;   
+    }
+    //3.2 没有高级定向包/最大包
+    if(flag==0 && ai->impression_counts < MAX_FREQUENCY){
+        slow_order(fen_tiao,output_vec);
+		Fans_Tar_Ad* result = (Fans_Tar_Ad*)(*output_vec.begin());
+		//有非粉，按照num补足非粉
+		supply_order(num,flag,fen_tiao,output_vec);
+		if(result==NULL){
+            LOG_ERROR("50 UID:%"PRIu64" counts:%"PRIu32" num:%"PRIu16" return 0 result is NULL", 
+					ai->come_uid,ai->impression_counts,num);
+			return 1;
+		}
+        LOG_ERROR("5 UID:%"PRIu64" counts:%"PRIu32" order_uid:%"PRIu64" adid:%s mid:%s num:%"PRIu16" return %u field:%s",
+		ai->come_uid,ai->impression_counts,result->order_uid, result->adid.c_str(), 
+		result->mid.c_str(),num,output_vec.size(),result->field_id.c_str());
+
+		algorithm_log(output_vec,5,num);
+		so_consume_time(start_time);
+        return 1;
+    }
+    //3.3 不存在最大包，频次较高， 不曝光
+    LOG_ERROR("6 UID:%"PRIu64" counts:%"PRIu32" num:%"PRIu16" return 0", ai->come_uid,ai->impression_counts,num);
+	so_consume_time(start_time);
+	return 1;
+}
+double FansTargetAlgorithmInterface::get_random(){
+	struct timeval now;
+	gettimeofday(&now,NULL);
+	srand((unsigned)now.tv_usec);
+	return rand()/(RAND_MAX+1.0);
+}
+
+//返回订单, 方便以后再里面使用算法
+int FansTargetAlgorithmInterface::slow_order(VEC_CAND& input_vec, VEC_CAND& output){
+	//1.  如果只有一个订单
+	if(input_vec.size() == 1){
+		output.push_back(*input_vec.begin());
+		return 1;
+	}
+
+	double* probability = new double[input_vec.size()];
+    time_t now;
+    time(&now);
+    int now_hour = (now % 86400) / 3600;
+    double now_little = ((now % 86400) % 3600) / 3600.0f; //12:30 ,30分钟的权重
+	int iter_count = 0;	//
+    for(VEC_CAND::iterator it = input_vec.begin();
+        it != input_vec.end(); ++it){
+		Fans_Tar_Ad * ft = (Fans_Tar_Ad*)(*it);
+
+        int begin_hour = (ft->begin_time % 86400) / 3600;
+        double begin_little = (3600 - ((ft->begin_time % 86400) % 3600)) / 3600.0f;    //8:20开始 ，40分钟的权重
+        double weights = TIME_WEIGHT[begin_hour] * begin_little + TIME_WEIGHT[now_hour] * now_little;
+        //2.1. 起始时间 8:00 , 现在 12:00  
+        if(begin_hour < now_hour){
+            for(int i = begin_hour + 1; i < now_hour; i++)
+                weights += TIME_WEIGHT[i];
+        }else{ // 2.2 起始时间 23:00， 现在时间 3:00
+            if(begin_hour < 23)
+                for(int i = begin_hour+1; i < 24; i++)
+                    weights += TIME_WEIGHT[i];
+
+            for(int i = 0; i < now_hour; ++i)
+                weights += TIME_WEIGHT[i];
+        }
+		// buy_amount=0 => theory_impression=0
+        double theory_impression = (weights / 24) * (ft->buy_amount);
+		probability[iter_count++] =  theory_impression / (ft->finish_amount+1.0);
+    }
+
+	//轮盘赌，抽样
+	for(uint32_t i = 1;i < input_vec.size(); i++){
+		probability[i] += probability[i-1];
+	}
+	//这里有bug,存在越界问题
+	double gamble = get_random() * probability[input_vec.size()-1];
+	uint32_t sample = 0;
+	for(;sample < input_vec.size(); sample ++){
+		if(gamble <= (probability[sample]+0.000001)) 
+			break;
+	}
+	if(sample >= input_vec.size()){
+		sample = input_vec.size() - 1;
+		LOG_ERROR("should not  happen");
+	}
+	output.push_back(input_vec[sample]);
+	delete []probability;
+    return 1;
+}
+
+int FansTargetAlgorithmInterface::supply_order(uint16_t num,uint32_t flag,VEC_CAND& input_vec,VEC_CAND& output_vec){
+	//根据num数目，补足返回订单数目
+	if(num == output_vec.size())
+		return 1;
+	Fans_Tar_Ad* best = (Fans_Tar_Ad*)(*output_vec.begin());
+	vector<string> adids; // 返回的广告 adid集合
+	adids.push_back(best->adid);
+    for(VEC_CAND::const_iterator it = input_vec.begin();
+        it != input_vec.end(); ++it){
+		Fans_Tar_Ad * ft = (Fans_Tar_Ad*)(*it);
+		//去重
+		if(find(adids.begin(),adids.end(),ft->adid)!=adids.end()){
+			if(flag > 1 && ft->field_id!=""){
+				output_vec.push_back(*it);
+				adids.push_back(ft->adid);
+			}
+			if(flag <=1){
+				output_vec.push_back(*it);
+				adids.push_back(ft->adid);
+			}
+		}
+		if(num == output_vec.size())
+			return 1;
+	}
+	return 1;
+}
+//返回算法层日志 num;return_type;type
+int FansTargetAlgorithmInterface::algorithm_log(VEC_CAND& output_vec,uint16_t return_type,uint16_t num){
+	for(VEC_CAND::const_iterator it = output_vec.begin();
+		it != output_vec.end(); ++it){
+		Fans_Tar_Ad * ft = (Fans_Tar_Ad*)(*it);
+		char str[256];
+		sprintf(str,"%u;%u;%u;%s",num,return_type,ft->type,ft->field_id.c_str());
+		ft->alg_log = string(str);
+	}
+	return 1;
+}
+
+int FansTargetAlgorithmInterface::so_consume_time(struct timeval& start){
+	struct timeval end;
+	gettimeofday(&end,NULL);
+	struct timeval delta;
+	uint64_t diff = (end.tv_sec-start.tv_sec)*1000000 + end.tv_usec - start.tv_usec;
+	delta.tv_sec = diff/1000000;
+	delta.tv_usec = diff%1000000;
+	LOG_INFO("FansTargetAlgorithmInterface consume time %d seconds %d useconds",delta.tv_sec,delta.tv_usec);
+	return 1;
+}
+//永生优质流量
+int FansTargetAlgorithmInterface::high_quality_user(uint64_t uid, VEC_CAND& input_vec, VEC_CAND& output_vec){
+	DbInterface* p_insuff_order_interface = p_db_company_->get_db_interface("NONFANS_USER_PROFILE");
+	if(NULL == p_insuff_order_interface){
+		LOG_ERROR("lushan connect error!\n");
+		return -1;
+	}
+	//LOG_ERROR("high_quality_user");
+	uint16_t key_size = 1;
+	//uid = 1952800693;
+	char** keystr = new char*[key_size];
+	for(uint16_t i = 0; i < key_size; i++){
+		keystr[i] = new char[128];
+	}
+
+	sprintf(keystr[0],"%d-%"PRIu64"",22, uid);
+	map<uint64_t, const char*> result;
+	//LOG_ERROR("getkey %s\n", keystr[0]);
+	//-------to get
+	int redis_flag = ((McDbInterface *)p_insuff_order_interface)->mget(1, keystr, key_size, result);
+	map<uint64_t, const char*>::iterator riter;
+	char res[1024];
+	char *p = res;
+	char *p2 = NULL;
+	int ok = 0;
+	for(riter = result.begin(); riter != result.end(); riter++){
+		//LOG_ERROR("test1 %u %s\n", riter->first, riter->second);
+		strcpy(res, riter->second);
+		char *p2 = strchr(p, '_');
+		if(p2 == NULL){goto BCK;}
+		*p2 = 0;
+		//Fans_Tar_Ad* result = (Fans_Tar_Ad*)(*output_vec.begin());
+		((Fans_Tar_Ad *)input_vec[0])->adid = string(p);
+		p = p2 + 1;
+		p2 = strchr(p, '_');
+		if(p2 == NULL){goto BCK;} 
+		*p2 = 0;
+		((Fans_Tar_Ad *)input_vec[0])->mid = string(p);
+		p = p2 + 1;
+		p2 = strchr(p, '_');
+		if(p2 == NULL){goto BCK;} 
+		*p2 = 0;
+		((Fans_Tar_Ad *)input_vec[0])->order_uid = atol(p);
+		ok = 1;
+	}
+	//
+	if(ok == 1){
+		output_vec.push_back(input_vec[0]);
+	}
+	
+BCK:
+	for(uint16_t i = 0; i < key_size; i++){
+		if(keystr[i]!=NULL){
+			delete(keystr[i]);
+		}
+	}
+	if(keystr != NULL){
+		delete(keystr);
+	}
+	return 1;
+}
+
+

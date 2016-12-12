@@ -1,0 +1,170 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXFileReference section */
+		DAAE7E391DED287100F467FF /* .svn */ = {isa = PBXFileReference; lastKnownFileType = folder; path = .svn; sourceTree = "<group>"; };
+		DAAE7E3A1DED287100F467FF /* alg_tool */ = {isa = PBXFileReference; lastKnownFileType = folder; path = alg_tool; sourceTree = "<group>"; };
+		DAAE7E3B1DED287100F467FF /* bin */ = {isa = PBXFileReference; lastKnownFileType = folder; path = bin; sourceTree = "<group>"; };
+		DAAE7E3C1DED287100F467FF /* conf */ = {isa = PBXFileReference; lastKnownFileType = folder; path = conf; sourceTree = "<group>"; };
+		DAAE7E3D1DED287100F467FF /* data */ = {isa = PBXFileReference; lastKnownFileType = folder; path = data; sourceTree = "<group>"; };
+		DAAE7E3E1DED287100F467FF /* depend */ = {isa = PBXFileReference; lastKnownFileType = folder; path = depend; sourceTree = "<group>"; };
+		DAAE7E3F1DED287100F467FF /* doc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = doc; sourceTree = "<group>"; };
+		DAAE7E401DED287100F467FF /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		DAAE7E411DED287100F467FF /* lib */ = {isa = PBXFileReference; lastKnownFileType = folder; path = lib; sourceTree = "<group>"; };
+		DAAE7E421DED287100F467FF /* log */ = {isa = PBXFileReference; lastKnownFileType = folder; path = log; sourceTree = "<group>"; };
+		DAAE7E431DED287100F467FF /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		DAAE7E441DED287100F467FF /* Makefile.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.in; sourceTree = "<group>"; };
+		DAAE7E451DED287100F467FF /* Makefile.old */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.old; sourceTree = "<group>"; };
+		DAAE7E461DED287100F467FF /* result */ = {isa = PBXFileReference; lastKnownFileType = folder; path = result; sourceTree = "<group>"; };
+		DAAE7E471DED287100F467FF /* setup_dependent.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = setup_dependent.sh; sourceTree = "<group>"; };
+		DAAE7E481DED287100F467FF /* setup_rpm.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = setup_rpm.sh; sourceTree = "<group>"; };
+		DAAE7E491DED287100F467FF /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; path = src; sourceTree = "<group>"; };
+		DAAE7E4A1DED287100F467FF /* work_tool */ = {isa = PBXFileReference; lastKnownFileType = folder; path = work_tool; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		DAAE7E331DED287100F467FF = {
+			isa = PBXGroup;
+			children = (
+				DAAE7E391DED287100F467FF /* .svn */,
+				DAAE7E3A1DED287100F467FF /* alg_tool */,
+				DAAE7E3B1DED287100F467FF /* bin */,
+				DAAE7E3C1DED287100F467FF /* conf */,
+				DAAE7E3D1DED287100F467FF /* data */,
+				DAAE7E3E1DED287100F467FF /* depend */,
+				DAAE7E3F1DED287100F467FF /* doc */,
+				DAAE7E401DED287100F467FF /* include */,
+				DAAE7E411DED287100F467FF /* lib */,
+				DAAE7E421DED287100F467FF /* log */,
+				DAAE7E431DED287100F467FF /* Makefile */,
+				DAAE7E441DED287100F467FF /* Makefile.in */,
+				DAAE7E451DED287100F467FF /* Makefile.old */,
+				DAAE7E461DED287100F467FF /* result */,
+				DAAE7E471DED287100F467FF /* setup_dependent.sh */,
+				DAAE7E481DED287100F467FF /* setup_rpm.sh */,
+				DAAE7E491DED287100F467FF /* src */,
+				DAAE7E4A1DED287100F467FF /* work_tool */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		DAAE7E381DED287100F467FF /* lab_common_promoteuser_20161019 */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = DAAE7E4B1DED287100F467FF /* Build configuration list for PBXLegacyTarget "lab_common_promoteuser_20161019" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = /Users/Zealot/git/c_project/lab_common_promoteuser_20161019;
+			dependencies = (
+			);
+			name = lab_common_promoteuser_20161019;
+			passBuildSettingsInEnvironment = 1;
+			productName = lab_common_promoteuser_20161019;
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXProject section */
+		DAAE7E341DED287100F467FF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+			};
+			buildConfigurationList = DAAE7E371DED287100F467FF /* Build configuration list for PBXProject "lab_common_promoteuser_20161019" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = DAAE7E331DED287100F467FF;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DAAE7E381DED287100F467FF /* lab_common_promoteuser_20161019 */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		DAAE7E351DED287100F467FF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx10.6;
+			};
+			name = Debug;
+		};
+		DAAE7E361DED287100F467FF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				SDKROOT = macosx10.6;
+			};
+			name = Release;
+		};
+		DAAE7E4C1DED287100F467FF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = lab_common_promoteuser_20161019;
+			};
+			name = Debug;
+		};
+		DAAE7E4D1DED287100F467FF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = lab_common_promoteuser_20161019;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		DAAE7E371DED287100F467FF /* Build configuration list for PBXProject "lab_common_promoteuser_20161019" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DAAE7E351DED287100F467FF /* Debug */,
+				DAAE7E361DED287100F467FF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DAAE7E4B1DED287100F467FF /* Build configuration list for PBXLegacyTarget "lab_common_promoteuser_20161019" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DAAE7E4C1DED287100F467FF /* Debug */,
+				DAAE7E4D1DED287100F467FF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DAAE7E341DED287100F467FF /* Project object */;
+}

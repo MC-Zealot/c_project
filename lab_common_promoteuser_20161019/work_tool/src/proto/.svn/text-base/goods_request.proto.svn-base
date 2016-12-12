@@ -1,0 +1,41 @@
+// See README.txt for information and build instructions.
+
+package goods_interface;
+
+message KeyWordPair {
+    optional string keywords = 1; //关键词
+    optional uint32 weight = 2; //关键词权重,0 - 1000
+};
+
+message InterestsPair {
+    optional uint32 interests = 1; //兴趣
+    optional uint32 weight = 2; // 兴趣权重, 0 - 1000
+};
+
+message UserAttr {
+    optional uint32 gender = 1;
+    optional uint32 age = 2;
+    repeated InterestsPair interests = 3;
+    repeated KeyWordPair keywords = 4;
+};
+
+message AdEng2IdxSrvMsg {
+    required string psid = 1; // psid
+    optional uint64 uid = 2; // uid
+    optional uint32 adnum = 3; // adnum， IndexServer返回给adengine 的广告数目；
+    optional uint32 location = 4; // localtion
+    optional uint32 adtype = 5; // adtype， CPM 2，Feed 8， SpeFeed 12；
+    optional UserAttr userattr = 6; // user attr
+    optional uint32 device = 7;// 终端类型，PC:1; 移动及客户端: 2;其他:0；
+    optional uint32 debug = 8; // 调试信息打印;0:不打印；1:打印；
+    optional string score_name = 9; // 传送给indexserver的打分策略；
+    optional string index_choosing = 10; // 格式类似key:value模式，负责选择查询哪些数据索引；如： fan:fan1;dim:dim1;bidword:bid1;interests:interests1
+    repeated string custid_list = 11; // 该uid关注的广告主列表
+    optional string target_data_name=12;
+    optional int32 custid_topn=13;  //请求indexserver每个广告主返回topn广告
+    optional uint32 carrier=14;
+    optional uint32 brand=15;
+    optional uint32 network_type=16;
+};
+
+

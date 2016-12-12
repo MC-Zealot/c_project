@@ -1,0 +1,38 @@
+include Makefile.in
+
+INC_PATH=-I../../feature_pool_bin/include/ -I../../uthash/ -I../../mapdb/include/ -I../../woo/include -I/usr/local/include/json -I/usr/local/include/hiredis/ -I../include/ -I../include/db/ -I../include/utility -I../include/work -I../include/algorithm
+LIB_LINK=-L../../feature_pool_bin/lib/ -L../../mapdb/lib/ -L../../woo/lib -L/usr/local/lib -lmemcached -lapifp -lmapdb -lcurl -lssl -ljson -lwoo -lstdc++ -lz -lhiredis -lpthread
+ALL_BIN = ../lib/FilterUserWorkInterface.so ../lib/UserRecomWorkInterface.so  ../lib/TestSoWorkInterface.so ../lib/TargetingWorkInterface.so ../lib/IntersectionWorkInterface.so ../lib/VerWorkInterface.so
+all:$(ALL_BIN)
+
+../lib/FilterUserWorkInterface.so : ./src/filter_user_work_interface.o ../src/ini_file.o
+	test -d ../lib || mkdir ../lib
+	$(CC) $(CFLAGS) -g -o $@ $^ $(LIB_LINK)
+
+../lib/UserRecomWorkInterface.so : ./src/userrecom_work_interface.o ../src/ini_file.o
+	test -d ../lib || mkdir ../lib
+	$(CC) $(CFLAGS) -g -o $@ $^ $(LIB_LINK)
+
+../lib/TestSoWorkInterface.so : ./src/test_so_work_interface.o ../src/ini_file.o
+	test -d ../lib || mkdir ../lib
+	$(CC) $(CFLAGS) -g -o $@ $^ $(LIB_LINK)
+
+../lib/TargetingWorkInterface.so : ./src/targeting_work_interface.o ../src/ini_file.o
+	test -d ../lib || mkdir ../lib
+	$(CC) $(CFLAGS) -g -o $@ $^ $(LIB_LINK)
+
+../lib/IntersectionWorkInterface.so : ./src/intersection_work_interface.o ../src/ini_file.o
+	test -d ../lib || mkdir ../lib
+	$(CC) $(CFLAGS) -g -o $@ $^ $(LIB_LINK)
+
+../lib/VerWorkInterface.so : ./src/ver_work_interface.o ../src/ini_file.o
+	test -d ../lib || mkdir ../lib
+	$(CC) $(CFLAGS) -g -o $@ $^ $(LIB_LINK)
+
+%.o:%.cpp
+	$(CC) $(CFLAGS) -c -o $@ $^ $(INC_PATH) -pg
+%.o:%.c
+	$(CC) $(CFLAGS) -c -o $@ $^ $(INC_PATH) -pg
+
+clean:
+	rm $(ALL_BIN) ./src/*.o

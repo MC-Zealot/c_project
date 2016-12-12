@@ -1,0 +1,47 @@
+package goods_interface;
+message AdWordPair {
+  optional string keywords = 1; //关键�? 
+  optional uint32 weight = 2; //关键词权�?0 - 1000
+  optional uint32 postigid=3; //词�?0 - 1000
+  optional uint32 src_type=4;//系统分析词：0，用户定向词�?
+};
+message Category{
+  optional uint32 cate_code=1;
+  optional uint32 weight=2;
+  optional uint32 level=3;//级别
+  optional uint32 src_type=4;//系统分析�?，用户定向：1
+};
+message FeedInfo {
+    optional uint64 custid = 1;// 广告主的uid
+    required uint64 adid = 2; //广告id
+    optional uint64 feedid = 3;// feed id
+    optional uint64 ptime = 4;// feed发布时间
+    optional uint32 price = 5; // 出价价格
+    optional uint32 bidtype = 6;// 1:CPF; 2:CPE; 
+    optional uint32 matchlevel = 7;// 0 : fans;1 : non-fans;2 : all�?    
+    optional uint32 score = 8; // 0 - 1000
+    repeated KeyValue key_val_list = 9;
+    optional string creative = 10;   // for aim feed
+    optional uint32 pricetype=11; //1:广告主定价;2:自动出价
+    optional float royalty_price=12; //分成比率
+    repeated AdWordPair keywordlist =13;//广告关键词list 
+    repeated Category categorylist=14;//广告类别��向
+    required string url_md5=15;//url的md5编码�?  
+    required string url =16;
+    required string ad_cate = 17;   //΢����΢����
+    required uint32 price_limited=18;//����޼�
+
+};
+
+message KeyValue {
+  required string key = 1;
+  required uint64 value = 2; // Every Attribute's index code.
+  
+};
+
+message IdxSrv2AdEngMsg {
+    required uint32 status = 1; // 0, ok; other, error;
+    repeated FeedInfo feedlist = 2;
+    optional string hostname = 3;
+};
+

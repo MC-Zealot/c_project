@@ -1,0 +1,147 @@
+Index: src/fanstarget_ad_algorithm_interface.cpp
+===================================================================
+--- src/fanstarget_ad_algorithm_interface.cpp	(revision 35551)
++++ src/fanstarget_ad_algorithm_interface.cpp	(revision 35520)
+@@ -37,18 +37,10 @@
+ 	uint16_t strategy = 1;	//性别优先
+ 	ACCESS_INFO* ai = (ACCESS_INFO*)access_info;
+ 	uint16_t num = ai->num;
+-
+-	//分组feed接入高级定向包,如果分组match到广告，则flag_group置为true
+-	string group_name=ai->group_name;
+-	bool flag_group=false;
+-
+-	//yingying
+-	LOG_ERROR("group_name:%s, group_id:%s", group_name.c_str(), ai->group_id.c_str());
+ 	//1. 分包，将集合分为 0:客户包，1:不能完成包, 2:精准定向包
+ 	VEC_CAND fen_tiao;
+ 	VEC_CAND insuff_impression;
+ 	VEC_CAND high_quality;
+-	VEC_CAND group_input_vec;
+ 	VEC_CAND::const_iterator impression; //指向  buy_amout / max_package 最大的订单,或者高级定向包
+ 	set<string> advanced;	//高级定向包实际adid个数
+ 	double max_occupy_ratio = 0.0;  // 记录  buy_amount / max_package 最大值
+@@ -58,12 +50,7 @@
+ 		Fans_Tar_Ad * ft = (Fans_Tar_Ad*)(*it);
+ 		if(ft->type == 0){
+ 			//高级定向包 0开头非粉 1 开头万能包 其它高级定向包
+-			if(ft->field_id>"1"){
+-				if(group_name!="")
+-				{
+-					group_input_vec.push_back(*it);
+-				}
+-
++			if(ft->field_id >"1"){
+ 				fen_tiao.push_back(*it);
+ 				advanced.insert(ft->adid);
+ 				impression = it;
+@@ -190,14 +177,7 @@
+ 	// 3. 投非粉包
+ 	//3.1 高级定向包/最大包
+ 	if(flag > 0 || max_occupy_ratio >= BUY_OCCUPY_MAX_PACKAGE){
+-		//add code by yingying
+-		//如果分组feed没有match到高级定向包的广告
+-		if(group_name.compare("")!=0)
+-			group_feed_match(num, group_name, group_input_vec, output_vec, flag_group);
+-		if(!flag_group)
+-		{
+-			output_vec.push_back(*impression);
+-		}
++		output_vec.push_back(*impression);
+ 		//有非粉，按照num补足非粉
+ 		supply_order(num,flag,fen_tiao,output_vec);
+ 		relation_replace(fen_tiao,output_vec,ai);
+@@ -461,14 +441,9 @@
+ 	//根据num数目，补足返回订单数目
+ 	if(num == output_vec.size())
+ 		return 1;
+-	//Fans_Tar_Ad* best = (Fans_Tar_Ad*)(*output_vec.begin());
+-	//adids.push_back(best->adid);
++	Fans_Tar_Ad* best = (Fans_Tar_Ad*)(*output_vec.begin());
+ 	vector<string> adids; // 返回的广告 adid集合
+-	for(VEC_CAND::const_iterator it = output_vec.begin(); it != output_vec.end(); ++it)
+-	{
+-		Fans_Tar_Ad* it_temp = (Fans_Tar_Ad*)(*it);
+-		adids.push_back(it_temp->adid);
+-	}
++	adids.push_back(best->adid);
+ 	for(VEC_CAND::const_iterator it = input_vec.begin();
+ 			it != input_vec.end(); ++it){
+ 		Fans_Tar_Ad * ft = (Fans_Tar_Ad*)(*it);
+@@ -651,76 +626,3 @@
+ 		}
+ 		return 1;
+ 	}
+-//add code by yingying
+-unsigned int hash_code(string group_name)
+-{
+-        unsigned int seed=131;
+-        unsigned int hash=0;
+-        char * str = const_cast<char *>(group_name.c_str());
+-        while(*str)
+-        {
+-                hash=hash*seed+(*str++);
+-        }
+-        return hash & 0x7FFFFFFF;
+-}
+-
+-
+-//add code by yingying
+-int FansTargetAlgorithmInterface::group_feed_match(uint16_t num, string &group_name, const VEC_CAND& input_vec, VEC_CAND& output_vec, bool &flag_group)
+-{
+-        //从lushan上面取group_name对应的垂直定向包id
+-        //如果对应的垂直定向包id和广告的industry_id是一样的，则放入output_vec，flag_group置为true
+-        //否则，直接返回
+-        //
+-		
+-        LOG_ERROR("enter in group_feed_match!");
+-        DbInterface* p_groupname_industry_interface = p_db_company_->get_db_interface("GROUP_MATCH");
+-        if(p_groupname_industry_interface == NULL)
+-        {
+-                LOG_ERROR("connect lushan user_nofans_groupname_industry_match failed!");
+-                return -1;
+-        }
+-        char **keystr=new char*[1];
+-        int key_size = 1;
+-        keystr[0]=new char[128];
+-        unsigned int group_name_code=hash_code(group_name);
+-        sprintf(keystr[0], "%u-%u", GROUP_NAME_INDUSTRY_DB_NO, group_name_code);
+-
+-        map<uint64_t, const char*> result;
+-		LOG_ERROR("group_name:%s, group_name_code:%u!", group_name.c_str(), group_name_code);
+-        int redis_flag = ((McDbInterface *)p_groupname_industry_interface)->mget(1, keystr, key_size, result);
+-
+-        //取到数据，释放keystr
+-        delete[] keystr[0];
+-        delete[] keystr;
+-        //如果没有对应的垂直定向包id，直接返回
+-        if(result.size()<1)
+-        {
+-                return 0;
+-        }
+-        string industry_id=result[group_name_code];
+-
+-        //将分组feed match到的广告放入output中，最多num个
+-		set<string> result_set; //广告排重
+-        set<string>::iterator itr_result;
+-        VEC_CAND::const_iterator end = input_vec.end();
+-        for(VEC_CAND::const_iterator itr = input_vec.begin(); itr != end; ++itr)
+-        {
+-                Fans_Tar_Ad *itr_temp= (Fans_Tar_Ad*)(*itr);
+-                if(itr_temp->field_id == industry_id)
+-                {
+-                        itr_result=result_set.find(itr_temp->adid);
+-                        if(itr_result == result_set.end())
+-                                continue;
+-                        output_vec.push_back(*itr);
+-                        result_set.insert(itr_temp->adid);
+-                        flag_group=true;
+-                }
+-                if(num == output_vec.size())
+-                {
+-                        break;
+-                }
+-        }
+-        return 0;
+-}
+-

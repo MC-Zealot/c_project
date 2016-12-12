@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/weiboad/!svn/ver/39228/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019
+END
+setup_dependent.sh
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/setup_dependent.sh
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/Makefile.in
+END
+setup_rpm.sh
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/setup_rpm.sh
+END
+Makefile.old
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/Makefile.old
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/Makefile
+END

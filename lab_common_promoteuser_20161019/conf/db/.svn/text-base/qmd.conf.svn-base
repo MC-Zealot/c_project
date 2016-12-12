@@ -1,0 +1,3 @@
+multi_data_path : ../data/data_list
+cache_buf_len : 10000000
+nodata_result : no found

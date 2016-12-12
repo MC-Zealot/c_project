@@ -1,0 +1,21 @@
+#!/bin/bash
+
+CMDLINE=$@
+
+echo `date +"%Y-%m-%d %H:%M:%S"`" begin to start:$CMDLINE"
+
+$CMDLINE &
+PID="$!"
+
+echo `date +"%Y-%m-%d %H:%M:%S"`" has started pid:$PID, $CMDLINE"
+#curl 'http://r.intra.weibo.com/stat/fans_economy/api/recv_warning.php?notice=warning&label=RESTART&msg=线上服务重启'
+
+while true
+do
+    wait $PID
+    echo `date +"%Y-%m-%d %H:%M:%S"`" terminated, to start again"
+    $CMDLINE &
+    PID="$!"
+    echo `date +"%Y-%m-%d %H:%M:%S"`" restarted pid:$PID, $CMDLINE"
+#    curl 'http://r.intra.weibo.com/stat/fans_economy/api/recv_warning.php?notice=warning&label=RESTART&msg=线上服务重启'
+done

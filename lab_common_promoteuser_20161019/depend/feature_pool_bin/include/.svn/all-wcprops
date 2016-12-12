@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/depend/feature_pool_bin/include
+END
+virtual_featurepool.h
+K 25
+svn:wc:ra_dav:version-url
+V 146
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/depend/feature_pool_bin/include/virtual_featurepool.h
+END
+api_featurepool.h
+K 25
+svn:wc:ra_dav:version-url
+V 142
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/depend/feature_pool_bin/include/api_featurepool.h
+END
+pthread_rw_locker.h
+K 25
+svn:wc:ra_dav:version-url
+V 144
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/depend/feature_pool_bin/include/pthread_rw_locker.h
+END
+cmn_featurepool.h
+K 25
+svn:wc:ra_dav:version-url
+V 142
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/depend/feature_pool_bin/include/cmn_featurepool.h
+END
+feature_pool_old.h
+K 25
+svn:wc:ra_dav:version-url
+V 143
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/depend/feature_pool_bin/include/feature_pool_old.h
+END
+feature_pool.h
+K 25
+svn:wc:ra_dav:version-url
+V 139
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/depend/feature_pool_bin/include/feature_pool.h
+END
+interface_featurepool.h
+K 25
+svn:wc:ra_dav:version-url
+V 148
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/depend/feature_pool_bin/include/interface_featurepool.h
+END
+arena.h
+K 25
+svn:wc:ra_dav:version-url
+V 132
+/weiboad/!svn/ver/38696/recomgroup/lab_common_nonfans/branch/lab_common_promoteuser_20161019/depend/feature_pool_bin/include/arena.h
+END
