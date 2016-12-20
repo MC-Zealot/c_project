@@ -7,8 +7,8 @@
 #include <unistd.h>
 typedef std::map<string,int> Map;
 
-const uint16_t ADER_PROFILE_DB_NO = 21;		//lushan
-const int64_t FEATURE_HASH_SIZE = 30000;
+const uint16_t MODEL_LR_DB_NO = 21;		//lushan
+const uint16_t ADER_PROFILE_DB_NO = 3;		//lushan
 void SplitString(string& src, string& token, vector<string>& sp){
 	string::size_type start, end;
 	start = 0;
@@ -21,12 +21,7 @@ void SplitString(string& src, string& token, vector<string>& sp){
 	if(start != src.length())
 		sp.push_back(src.substr(start));
 }
-int GetFeatureHash(const char* feature) {
-  unsigned long long a, hash = 0;
-  for (a = 0; a < strlen(feature); a++) hash = hash * 257 + feature[a];
-  hash = hash % (FEATURE_HASH_SIZE - 101);
-  return hash;
-}
+
 typedef struct _lushan{
 	int keysize;
 	char** keystr;
@@ -76,12 +71,12 @@ float getRandomFloat()
 class Ad_Info{
 public:
 	string adid;//广告主id
-	float ctr;//广告主ctr（天）
-	float ios_ctr;
-	float android_ctr;
-	float other_ctr;
-	float male_ctr;
-	float female_ctr;
+	string ctr;//广告主ctr（天）
+	string ios_ctr;
+	string android_ctr;
+	string other_ctr;
+	string male_ctr;
+	string female_ctr;
 };
 //声明全局变量 供模型使用
 model_data **model_ptr,*model_copy_ptr;
@@ -180,8 +175,11 @@ class PromoteFansAlgorithmInterface :public AlgorithmInterface{
 		int search_feature_index(string &key,model_data* read_ptr);
 		float search_weights(string feature_name, string value,model_data *read_ptr,int value_type);
 		int user_ad_ctr_estimate(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num);
-		map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& input_vec);
+		map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_infos(const VEC_CAND& input_vec);
 		model_data* read_model();
+		float getGenderScore(int gender, Ad_Info ai, model_data *model_read_ptr);
+		float getPlatformScore(int platform, Ad_Info ai, model_data *model_read_ptr);
+		float getAdScore(Ad_Info ai, model_data *model_read_ptr);
 };
 
 #endif

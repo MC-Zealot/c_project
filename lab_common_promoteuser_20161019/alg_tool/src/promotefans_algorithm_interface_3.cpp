@@ -21,7 +21,8 @@ int PromoteFansAlgorithmInterface::algorithm_core_new(uint64_t req_id, const Acc
 		return 1;
 	}
 
-	user_ad_history_ctr(ai, input_vec, output_vec, 3);
+//	user_ad_history_ctr(ai, input_vec, output_vec, 3);
+	user_ad_ctr_estimate(ai, input_vec, output_vec, 3);
 	return 1;
 }
 /**
@@ -127,7 +128,7 @@ void PromoteFansAlgorithmInterface::_RunThread(){
 	vector<pair<int,int> > model_vec;
 	vector<pair<int,int> >::iterator iter;
 	//first is lushan db number; second is model conf
-	model_vec.push_back(make_pair(ADER_PROFILE_DB_NO,23));
+	model_vec.push_back(make_pair(MODEL_LR_DB_NO,23));
 	if(model_vec.size() >0 ){
 		model_conf* mcf;
 		mcf = new model_conf[model_vec.size()];
@@ -349,24 +350,44 @@ int PromoteFansAlgorithmInterface::user_ad_ctr_estimate(const ACCESS_INFO* ai, c
 	int gender = ai->gender;
 	int os = ai->os;
 	//广告主各项ctr数据
-	vector<Ad_Info> ad_infos = get_ad_info(input_vec);
+	map<string, Ad_Info> ad_infos = get_ad_infos(input_vec);
 	//模型数据
 	model_read_ptr = read_model();
+	int count=0;
+	map<int, float> sort_ad;
 	//特征映射，拼接key，查找对应的映射
 	//查找权重
+	//计算分值
+	map<string, Ad_Info>::iterator iter;
+	for(iter = ad_infos.begin(); iter != ad_infos.end();iter++){
+		Ad_Info ai = iter->second;
+		float score = getAdScore(ai,model_read_ptr) + getGenderScore(gender, ai, model_read_ptr) + getPlatformScore(os, ai, model_read_ptr);
+		sort_ad.insert(make_pair(count, score));
+		count++;
+	}
+	//结果放到output_vec中
+	if (sort_ad.size() >= 1){
+		vector<pair<int, float> > tmp(sort_ad.begin(), sort_ad.end());
+		sort(tmp.begin(), tmp.end(), dict_compare);
+		if (sort_ad.size()<3) num = sort_ad.size();
+		for (int i = 0;i<num;i++){
+			output_vec.push_back(input_vec[tmp[i].first]);
+		}
+		LOG_ERROR("BEST:%lf", tmp[0].second);
+	}
 	return 1;
 }
 
 
 /**
- *获取广告各项ctr数据
+ *获取所有请求的广告的各项ctr数据
  如果数据库连接失败，则返回NULL
  * @param input_vec
  * @return
  */
-map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& input_vec){
+map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_infos(const VEC_CAND& input_vec){
 	map<string, Ad_Info> res_ad_infos;
-	int dbno = 3;
+	int dbno = ADER_PROFILE_DB_NO;
 	//取lushan数据
 	LOG_ERROR("get ad info");
 	DbInterface* p_insuff_order_interface = p_db_company_->get_db_interface("NONFANS_USER_PROFILE");
@@ -386,7 +407,7 @@ map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& 
 		sprintf(keystr[index++],"%u-%"PRIu64"", dbno, ft->uid);//order_id info;
 	}
 
-	sprintf(keystr[index],"%u-1", dbno);//默认ctr
+//	sprintf(keystr[index],"%u-1", dbno);//默认ctr
 	map<uint64_t, const char*> result;
 	int redis_flag = ((McDbInterface *)p_insuff_order_interface)->mget(1, keystr, key_size, result);
 	if(redis_flag != 1){
@@ -401,12 +422,12 @@ map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& 
 		string s = iter->second;
 		vector<string> fileds;
 		SplitString(s, token, fileds);
-		double ctr = (double) atof(fileds[0].c_str());
-		double male_ctr = (double) atof(fileds[1].c_str());
-		double female_ctr = (double) atof(fileds[2].c_str());
-		double ios_ctr = (double) atof(fileds[3].c_str());
-		double android_ctr = (double) atof(fileds[4].c_str());
-		double other_ctr = (double) atof(fileds[5].c_str());
+		string ctr = fileds[0];
+		string male_ctr = fileds[1];
+		string female_ctr =fileds[2];
+		string ios_ctr =fileds[3];
+		string android_ctr = fileds[4];
+		string other_ctr = fileds[5];
 		ai.adid = iter->first;
 		ai.ctr = ctr;
 		ai.male_ctr = male_ctr;
@@ -416,6 +437,13 @@ map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& 
 		ai.other_ctr = other_ctr;
 
 		res_ad_infos.insert(make_pair(iter->first, ai));
+	}
+	//释放内存
+	for (uint16_t i = 0; i < key_size; i++) {
+		delete[] keystr[i];
+	}
+	if (keystr != NULL) {
+		delete[] keystr;
 	}
 	return res_ad_infos;
 }
@@ -433,4 +461,111 @@ model_data* PromoteFansAlgorithmInterface::read_model(){
 	//LOG_ERROR("LOAD MODEL BEGIN LOCK1 SLEEP PTHREAD:%d",tid_fans_economy);
 	pthread_mutex_unlock(&p_lock_fans_economy);
 	return model_read_ptr;
+}
+
+int PromoteFansAlgorithmInterface::search_feature_index(string& key, model_data* read_ptr){
+	int index = -1,debug = 0;
+	if(read_ptr->mapArray[read_ptr->indexkey]->find(key.c_str()) != read_ptr->mapArray[0]->end()){
+		index = (*(read_ptr->mapArray[0]))[key.c_str()];
+		if (1 == debug) LOG_ERROR("MODEL UPDATE CHECK MAP COMPARE :key_s-%s,value:%d",key.c_str(),(*(read_ptr->mapArray[0]))[key.c_str()]);
+	}
+	return index;
+}
+
+/**
+ *搜索权重
+ * @param feature_name
+ * @param value
+ * @param read_ptr
+ * @param value_type
+ * @return
+ */
+float PromoteFansAlgorithmInterface::search_weights(string feature_name, string value,model_data *read_ptr,int value_type){
+	//value_type 0：float，1：int
+	LOG_ERROR("MODEL UPDATE CHECK: search_weights");
+	if (read_ptr == NULL || read_ptr->weights == NULL ){
+		LOG_ERROR("MODEL UPDATE CHECK: read_ptr is NULL");
+		return 0.0;
+	}
+	int val_length = value.length();
+	float query_value = atof(value.c_str());
+	char val[128];
+	if (value_type) {
+		sprintf(val,"%d",int(query_value));
+	}
+	else{
+		sprintf(val,"%s",value.c_str());
+	}
+	string key = feature_name + "_"+ val;
+	int k = search_feature_index(key,read_ptr);
+	int back_i = 1;
+	while(-1 == k && back_i < 4 ){
+		query_value = query_value *(1- back_i *back_i / 50.0);
+		if (value_type ==1 ) {
+			sprintf(val,"%d",int(query_value));
+		}
+		else{
+			sprintf(val,"%s",value.c_str());
+			if(val_length - back_i >0)
+			val[val_length - back_i] = 0;
+		}
+		key = feature_name+"_" + val;
+		k = search_feature_index(key,read_ptr);
+		++back_i;
+	}
+	if(-1 != k) {
+		LOG_ERROR("MODEL UPDATE CHECK:weights-%f",atof(read_ptr->weights[k]));
+		return atof(read_ptr->weights[k]);
+	}
+	return -10000;
+}
+
+float PromoteFansAlgorithmInterface::getAdScore(Ad_Info ai, model_data *model_read_ptr){
+	float res_score;
+	string feature_name;
+	feature_name="ctr";
+	res_score = search_weights(feature_name,ai.ctr,model_read_ptr,1);
+	return res_score;
+}
+/**
+ *获取性别交叉评分
+ * @param gender
+ * @param ai
+ * @param model_read_ptr
+ * @return
+ */
+float PromoteFansAlgorithmInterface::getGenderScore(int gender, Ad_Info ai, model_data *model_read_ptr){
+	float res_score;
+	string feature_name;
+	if(gender==1){
+		feature_name="male";
+		res_score = search_weights(feature_name,ai.male_ctr,model_read_ptr,1);
+	}else{
+		feature_name="female";
+		res_score = search_weights(feature_name,ai.female_ctr,model_read_ptr,1);
+	}
+	return res_score;
+}
+/**
+ * 获取平台交叉评分
+ todo 确定平台的id号
+ * @param platform
+ * @param ai
+ * @param model_read_ptr
+ * @return
+ */
+float PromoteFansAlgorithmInterface::getPlatformScore(int platform, Ad_Info ai, model_data *model_read_ptr){
+	float res_score;
+	string feature_name;
+	if(platform==1){
+		feature_name="ios";
+		res_score = search_weights(feature_name,ai.ios_ctr,model_read_ptr,1);
+	}else if(platform==2){
+		feature_name="android";
+		res_score = search_weights(feature_name,ai.android_ctr,model_read_ptr,1);
+	}else{
+		feature_name="other";
+		res_score = search_weights(feature_name,ai.other_ctr,model_read_ptr,1);
+	}
+	return res_score;
 }
