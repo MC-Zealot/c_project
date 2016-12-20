@@ -73,13 +73,15 @@ float getRandomFloat()
 	}
 	return ans;
 }
-typedef struct Ad_Info{
-float ctr;
-float ios_ctr;
-float android_ctr;
-float other_ctr;
-float male_ctr;
-float female_ctr;
+class Ad_Info{
+public:
+	string adid;//广告主id
+	float ctr;//广告主ctr（天）
+	float ios_ctr;
+	float android_ctr;
+	float other_ctr;
+	float male_ctr;
+	float female_ctr;
 };
 //声明全局变量 供模型使用
 model_data **model_ptr,*model_copy_ptr;
@@ -178,7 +180,8 @@ class PromoteFansAlgorithmInterface :public AlgorithmInterface{
 		int search_feature_index(string &key,model_data* read_ptr);
 		float search_weights(string feature_name, string value,model_data *read_ptr,int value_type);
 		int user_ad_ctr_estimate(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num);
-		std::vector<Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& input_vec);
+		map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& input_vec);
+		model_data* read_model();
 };
 
 #endif

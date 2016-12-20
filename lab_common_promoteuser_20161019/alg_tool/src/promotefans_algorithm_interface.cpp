@@ -15,13 +15,14 @@ bool dict_compare(pair<int, float> lhs, pair<int, float> rhs){
 
 int PromoteFansAlgorithmInterface::user_ad_history_ctr(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num){
 	//1. 取lushan数据
-	LOG_ERROR("In history_ctr");
+	LOG_ERROR("In history_ctr1");
 	DbInterface* p_insuff_order_interface = p_db_company_->get_db_interface("NONFANS_USER_PROFILE");
 	if(NULL == p_insuff_order_interface){
 		LOG_ERROR("lushan connect error!");
 		return -1;
 	}
 	uint16_t key_size = input_vec.size() + 1;
+	LOG_ERROR("key_size: %u", key_size);
 	char** keystr = new char*[key_size];
 	for(uint16_t i = 0; i < key_size; i++)
 		keystr[i] = new char[256];
@@ -43,7 +44,9 @@ int PromoteFansAlgorithmInterface::user_ad_history_ctr(const ACCESS_INFO* ai, co
 	vector<string> user_profile;
 	float score = 0.0;
 	string def;
+
 	int redis_flag = ((McDbInterface *)p_insuff_order_interface)->mget(1, keystr, key_size, result);
+	LOG_ERROR("redis_flag: %d", redis_flag);
 	if(redis_flag != 1){
 		LOG_ERROR("redis_flag_error");
 		//随机出广告
