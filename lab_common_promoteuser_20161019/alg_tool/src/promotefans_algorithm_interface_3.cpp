@@ -345,21 +345,27 @@ FREE_MODULE:
  * @return
  */
 int PromoteFansAlgorithmInterface::user_ad_ctr_estimate(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num){
+	//用户数据
+	int gender = ai->gender;
+	int os = ai->os;
+	//广告主各项ctr数据
+	vector<Ad_Info> ad_infos = get_ad_info(input_vec);
+	//模型数据
+	model_read_ptr = read_model();
+	//特征映射，拼接key，查找对应的映射
+	//查找权重
 	return 1;
 }
 
-int get_user_info(const ACCESS_INFO* ai){
-	ai->gender;
-	ai->os;
-	return 1;
-}
+
 /**
  *获取广告各项ctr数据
+ 如果数据库连接失败，则返回NULL
  * @param input_vec
  * @return
  */
-std::vector<Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& input_vec){
-	vector<Ad_Info> res_ad_infos;
+map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& input_vec){
+	map<string, Ad_Info> res_ad_infos;
 	int dbno = 3;
 	//取lushan数据
 	LOG_ERROR("get ad info");
@@ -384,9 +390,47 @@ std::vector<Ad_Info> PromoteFansAlgorithmInterface::get_ad_info(const VEC_CAND& 
 	map<uint64_t, const char*> result;
 	int redis_flag = ((McDbInterface *)p_insuff_order_interface)->mget(1, keystr, key_size, result);
 	if(redis_flag != 1){
-			LOG_ERROR("redis_flag_error");
-			return res_ad_infos;
+		LOG_ERROR("redis_flag_error");
+		return res_ad_infos;
 	}
-	//TODO 拼接广告数据到vector中
+	//拼接广告数据到res_ad_infos中
+	string token = ",";
+	for(map<uint64_t, const char*>::const_iterator iter = result.begin();iter != result.end(); iter++){
+		LOG_ERROR("LUSHAN %lld:%s", iter->first, iter->second);
+		Ad_Info ai;
+		string s = iter->second;
+		vector<string> fileds;
+		SplitString(s, token, fileds);
+		double ctr = (double) atof(fileds[0].c_str());
+		double male_ctr = (double) atof(fileds[1].c_str());
+		double female_ctr = (double) atof(fileds[2].c_str());
+		double ios_ctr = (double) atof(fileds[3].c_str());
+		double android_ctr = (double) atof(fileds[4].c_str());
+		double other_ctr = (double) atof(fileds[5].c_str());
+		ai.adid = iter->first;
+		ai.ctr = ctr;
+		ai.male_ctr = male_ctr;
+		ai.female_ctr = female_ctr;
+		ai.ios_ctr = ios_ctr;
+		ai.android_ctr = android_ctr;
+		ai.other_ctr = other_ctr;
+
+		res_ad_infos.insert(make_pair(iter->first, ai));
+	}
 	return res_ad_infos;
+}
+
+/**
+ * 读模型
+ * @return
+ */
+model_data* PromoteFansAlgorithmInterface::read_model(){
+	//ctr模型
+	pthread_mutex_lock(&p_lock_fans_economy);
+	LOG_ERROR("addlock search:%d",tid_fans_economy);
+	model_read_ptr = model_ptr[1];
+	LOG_ERROR("releaselock search:%d",tid_fans_economy);
+	//LOG_ERROR("LOAD MODEL BEGIN LOCK1 SLEEP PTHREAD:%d",tid_fans_economy);
+	pthread_mutex_unlock(&p_lock_fans_economy);
+	return model_read_ptr;
 }
