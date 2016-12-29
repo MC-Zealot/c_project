@@ -12,8 +12,6 @@ bool dict_compare(pair<int, float> lhs, pair<int, float> rhs){
         return lhs.second > rhs.second;
 }
 bool User_Order_Ad_compare(User_Order_Ad * lhs, User_Order_Ad * rhs){
-	LOG_ERROR("%u", lhs->adscore);
-	LOG_ERROR("%u", rhs->adscore);
         return lhs->adscore > rhs->adscore;
 }
 int PromoteFansAlgorithmInterface::algorithm_core_new(uint64_t req_id, const AccessInfo* access_info, const VEC_CAND& input_vec, VEC_CAND& output_vec){
@@ -26,8 +24,8 @@ int PromoteFansAlgorithmInterface::algorithm_core_new(uint64_t req_id, const Acc
 		return 1;
 	}
 
-//	user_ad_history_ctr(ai, input_vec, output_vec, 3);
-	user_ad_ctr_estimate2(ai, input_vec, output_vec, ai->ad_num);
+	user_ad_history_ctr(ai, input_vec, output_vec, ai->ad_num);
+//	user_ad_ctr_estimate(ai, input_vec, output_vec, ai->ad_num);
 
 	return 1;
 }
@@ -442,114 +440,61 @@ FREE_MODULE:
  * @param ai 用户数据
  * @param input_vec 广告候选集
  * @param output_vec 返回排好序的广告
- * @param num 需要返回的数量
+ * @param res_ad_num 需要返回的数量
  * @return
  */
-int PromoteFansAlgorithmInterface::user_ad_ctr_estimate(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num){
-	LOG_ERROR("user_ad_ctr_estimate begin...");
-	//用户数据
-	int gender = ai->gender;
-	int os = ai->os;
-	//广告主各项ctr数据
-	map<uint64_t, Ad_Info> ad_infos = get_ad_infos(input_vec);
-	Ad_Info default_ad_info = get_default_ad_info();
-	//模型数据
-	model_read_ptr = read_model();
-
-	if(ad_infos.size()>0){
-		int index = 0;//输入数据的顺序
-		map<int, float> sort_ad;
-		//特征映射，拼接key，查找对应的映射
-		//查找权重
-		//计算分值
-		for(map<uint64_t, Ad_Info>::iterator iter = ad_infos.begin(); iter != ad_infos.end();iter++){
-			Ad_Info ai = iter->second;
-			float adScore = getAdScore(ai, model_read_ptr, default_ad_info);
-			float genderScore = getGenderScore(gender, ai, model_read_ptr, default_ad_info);
-			float platformScore = getPlatformScore(os, ai, model_read_ptr, default_ad_info);
-
-			float score =  adScore + genderScore + platformScore;
-			LOG_ERROR("final index: %d, adid: %u, adScore: %f", index,ai.adid, score);
-			sort_ad.insert(make_pair(index, score));
-			index++;
-		}
-		//结果放到output_vec中
-		if (sort_ad.size() >= 1){
-			vector<pair<int, float> > tmp(sort_ad.begin(), sort_ad.end());
-			sort(tmp.begin(), tmp.end(), dict_compare);
-			if (sort_ad.size() < num) {
-				num = sort_ad.size();
-			}
-			for (int i = 0;i<num;i++){
-				LOG_ERROR("index: %d",tmp[i].first);
-				User_Order_Ad * ft = (User_Order_Ad*)input_vec[tmp[i].first];
-				LOG_ERROR("tmp %d, second: %f",i , tmp[i].second);
-				int sco = (int)tmp[i].second * 100000.0;
-				ft->adscore = sco;
-				LOG_ERROR("final adid: %u, sco: %u, adScore: %u", ft->uid, sco,  ft->adscore);//结果展示一下
-				output_vec.push_back(input_vec[tmp[i].first]);
-			}
-		}else{
-			LOG_ERROR("no result");
-		}
-	}else{
-		LOG_ERROR("lushan connect error!");
-	}
-	return 1;
-}
-int PromoteFansAlgorithmInterface::user_ad_ctr_estimate2(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int ad_num){
-	LOG_ERROR("user_ad_ctr_estimate begin... adnum: %d", ad_num);
+int PromoteFansAlgorithmInterface::user_ad_ctr_estimate(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int res_ad_num){
+	LOG_ERROR("user_ad_ctr_estimate begin...uid: %u, adnum: %d", ai->come_uid,res_ad_num);
 	if (input_vec.size() == 0) {
 		LOG_ERROR("no input");
 		return 1;
 	}
+	if (input_vec.size() < res_ad_num) {
+		res_ad_num = input_vec.size();
+	}
 	//用户数据
 	int gender = ai->gender;
 	int os = ai->os;
 	//广告主各项ctr数据
 	map<uint64_t, Ad_Info> ad_infos = get_ad_infos(input_vec);
+	if(ad_infos.size()==0){
+		LOG_ERROR("lushan connect error!");
+		return 1;
+	}
 	LOG_ERROR("get ad info done");
 	Ad_Info default_ad_info = get_default_ad_info();
 	LOG_ERROR("get default ad info done");
 	//模型数据
 	model_read_ptr = read_model();
 
-	if(ad_infos.size()>0){
-		//特征映射，拼接key，查找对应的映射
-		//查找权重
-		//计算分值
-		vector<User_Order_Ad*> tmp_new;
-		for(VEC_CAND::const_iterator it = input_vec.begin(); it!=input_vec.end(); it++){
-			User_Order_Ad * ft = (User_Order_Ad*)(*it);
-			if(ad_infos.find(ft->uid)==ad_infos.end()){
-				continue;
-			}
-			Ad_Info ai = ad_infos[ft->uid];
-			float adScore = getAdScore(ai, model_read_ptr, default_ad_info);
-			float genderScore = getGenderScore(gender, ai, model_read_ptr, default_ad_info);
-			float platformScore = getPlatformScore(os, ai, model_read_ptr, default_ad_info);
-
-			float score =  adScore + genderScore + platformScore;
-			ft->adscore=floor(score * 100000) ;
-			LOG_ERROR("adid: %u, adScore: %u",ai.adid, ft->adscore);
-			tmp_new.push_back(ft);
+	//特征映射，拼接key，查找对应的映射
+	//查找权重
+	//计算分值
+	vector<User_Order_Ad*> tmp_new;
+	for(VEC_CAND::const_iterator it = input_vec.begin(); it!=input_vec.end(); it++){
+		User_Order_Ad * ft = (User_Order_Ad*)(*it);
+		if(ad_infos.find(ft->uid)==ad_infos.end()){
+			continue;
 		}
+		Ad_Info ai = ad_infos[ft->uid];
+		float adScore = getAdScore(ai, model_read_ptr, default_ad_info);
+		float genderScore = getGenderScore(gender, ai, model_read_ptr, default_ad_info);
+		float platformScore = getPlatformScore(os, ai, model_read_ptr, default_ad_info);
 
-		//结果放到output_vec中
-//		vector<candidate_item_t*> tmp(input_vec.begin(), input_vec.end());
-
-		sort(tmp_new.begin(), tmp_new.end(), User_Order_Ad_compare);
-		if (input_vec.size() < ad_num) {
-			ad_num = input_vec.size();
-		}
-		for (int i = 0; i < ad_num; i++) {
-			User_Order_Ad * ft = tmp_new[i];
-			LOG_ERROR("final adid: %u,  adScore: %u", ft->uid, ft->adscore);//结果展示一下
-			output_vec.push_back(ft);
-		}
-	}else{
-		LOG_ERROR("lushan connect error!");
+		float score =  adScore + genderScore + platformScore;
+		ft->adscore=floor(score * 100000);
+		LOG_ERROR("adid: %u, adScore: %u",ai.adid, ft->adscore);
+		tmp_new.push_back(ft);
 	}
+	sort(tmp_new.begin(), tmp_new.end(), User_Order_Ad_compare);//排序
+
+	//结果放到output_vec中
+	for (int i = 0; i < res_ad_num; i++) {
+		User_Order_Ad * ft = tmp_new[i];
+		LOG_ERROR("final adid: %u,  adScore: %u", ft->uid, ft->adscore);//结果展示一下
+		output_vec.push_back(ft);
+	}
+
 	return 1;
 }
 

@@ -179,7 +179,6 @@ class PromoteFansAlgorithmInterface :public AlgorithmInterface{
 		int search_feature_index(string &key,model_data* read_ptr);
 		float search_weights(string feature_name, string value,model_data *read_ptr,int value_type);
 		int user_ad_ctr_estimate(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num);
-		int user_ad_ctr_estimate2(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num);
 		map<uint64_t, Ad_Info> get_ad_infos(const VEC_CAND& input_vec);
 		model_data* read_model();
 		float getGenderScore(int gender, Ad_Info ai, model_data *model_read_ptr, Ad_Info default_ad_info);
