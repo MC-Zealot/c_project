@@ -2,8 +2,7 @@
 
 DYN_ALGORITHMS(PromoteFansAlgorithmInterface);
 
-int PromoteFansAlgorithmInterface::algorithm_core(uint64_t req_id, const AccessStr& access_str,
-		VEC_CAND& vec_cand){
+int PromoteFansAlgorithmInterface::algorithm_core(uint64_t req_id, const AccessStr& access_str, VEC_CAND& vec_cand){
 
 	LOG_ERROR("PromoteFansAlgorithmInterface::algorithm_core return 1\n");
 	return 1;
@@ -12,17 +11,24 @@ int PromoteFansAlgorithmInterface::algorithm_core(uint64_t req_id, const AccessS
 bool dict_compare(pair<int, float> lhs, pair<int, float> rhs){
         return lhs.second > rhs.second;
 }
+bool User_Order_Ad_compare(User_Order_Ad * lhs, User_Order_Ad * rhs){
+	LOG_ERROR("%u", lhs->adscore);
+	LOG_ERROR("%u", rhs->adscore);
+        return lhs->adscore > rhs->adscore;
+}
 int PromoteFansAlgorithmInterface::algorithm_core_new(uint64_t req_id, const AccessInfo* access_info, const VEC_CAND& input_vec, VEC_CAND& output_vec){
 	ACCESS_INFO* ai = (ACCESS_INFO*) access_info;
 
 	int size = input_vec.size();
 	LOG_ERROR("PromoteFansAlgorithmInterface inputvec.size():%d\n", size);
 	if(size <= 0){
+		LOG_ERROR("no input ads, req_id:%u", req_id);
 		return 1;
 	}
 
 //	user_ad_history_ctr(ai, input_vec, output_vec, 3);
-	user_ad_ctr_estimate(ai, input_vec, output_vec, 3);
+	user_ad_ctr_estimate2(ai, input_vec, output_vec, ai->ad_num);
+
 	return 1;
 }
 /**
@@ -150,11 +156,105 @@ void PromoteFansAlgorithmInterface::_RunThread(){
 				}
 
 			}
-			sleep(60);//设置间隔时间 测试设置1分钟
+			sleep(60 * 60);//设置间隔时间 测试设置1小时
 		}
 		delete[] mcf;
 		if (mcf != NULL) mcf = NULL;
 	}
+}
+int PromoteFansAlgorithmInterface::parse_model_parameters(model_conf &mcf,int db_num,int key){
+	//get lushan  model配置
+	DbInterface* p_insuff_order_interface = p_db_company_->get_db_interface("NONFANS_USER_PROFILE");
+	//申请变量
+	vector<string> tmp_vec;
+	string token =";",info="";
+	int idx = 0,debug =1,update_flg = 0;
+	int redis_flag = 0,model_keysize = 1;
+	map<uint64_t,const char*> lsresult;
+	string conf_str;
+	//参数初始化
+	mcf.keys_vec.clear();
+	mcf.mapkeys.clear();
+	mcf.arraykey = -1;
+	char** lskeys = new char*;
+	lskeys[0] = new char[128]();
+	sprintf(lskeys[0],"%d-%d",db_num,key);
+	//obtain lushan data
+	if(NULL == p_insuff_order_interface){
+		LOG_ERROR("lushan connect error!");
+	}
+	else redis_flag = ((McDbInterface *)p_insuff_order_interface)->mget(1, lskeys, model_keysize, lsresult);
+	if (redis_flag !=1){
+		LOG_ERROR("lushan obtain data error!");
+		goto FREE_MODEL;
+	}
+	if (lsresult.find(key) != lsresult.end() && lsresult[key] != NULL && strlen(lsresult[key])>2){
+		conf_str = lsresult[key];
+	}
+	else {
+		LOG_ERROR("lushan obtained data check is error!");
+		goto FREE_MODEL;
+	}
+	if (debug ==1) LOG_ERROR("lushan model obtained data: db-key:%d-%d,val:%s",db_num,key,conf_str.c_str());
+	info = conf_str.substr(1,conf_str.length()-2);
+	SplitString(info,token,tmp_vec);
+	for(size_t i=0;i< tmp_vec.size();i++){
+		idx = tmp_vec[i].find(":");
+		LOG_ERROR("lushan model obtain 1 parameters %s,%s",tmp_vec[i].substr(0,idx).c_str(),tmp_vec[i].substr(idx+1).c_str());
+		//check 分割后 k-v 都不为空
+		if ( idx == -1 || idx ==0 || idx+2>tmp_vec[i].length()){
+			continue;
+			goto FREE_MODEL;
+		}
+		LOG_ERROR("lushan model obtain 2 parameters %s,%s",tmp_vec[i].substr(0,idx).c_str(),tmp_vec[i].substr(idx+1).c_str());
+		if (strcmp(tmp_vec[i].substr(0,idx).c_str(),"db_key") == 0){
+			token = ",";
+			info = tmp_vec[i].substr(idx+2,tmp_vec[i].length()-idx-3);
+			SplitString(info,token,mcf.keys_vec);
+
+
+		}
+		else if (strcmp(tmp_vec[i].substr(0,idx).c_str(),"mapkey") == 0){
+			token = ",";
+			info = tmp_vec[i].substr(idx+2,tmp_vec[i].length()-idx-3);
+			SplitString(info,token,mcf.mapkeys);
+		}
+		else if (strcmp(tmp_vec[i].substr(0,idx).c_str(),"arraykey") == 0){
+			//该字段可以不用，检查是否为空
+			mcf.arraykey = atoi(tmp_vec[i].substr(idx+1,tmp_vec[i].length()-idx-1).c_str());
+		}
+		else if (strcmp(tmp_vec[i].substr(0,idx).c_str(),"indexkey") == 0){
+			//该字段可以不用，检查是否为空
+			mcf.indexkey = atoi(tmp_vec[i].substr(idx+1,tmp_vec[i].length()-idx-1).c_str());
+		}
+		else if (strcmp(tmp_vec[i].substr(0,idx).c_str(),"update") == 0){
+			string flg = tmp_vec[i].substr(idx+1,tmp_vec[i].length()-idx-1);
+			if ( strcmp(mcf.update_f.c_str(),flg.c_str()) !=0) {
+			//	mcf.update_f = flg;
+				update_flg = 1;
+			}
+			else{
+				goto FREE_MODEL;
+			}
+		}
+		//新增字段 自己调用使用
+		else {
+			LOG_ERROR("lushan model obtain 3 parameters %s,%s",tmp_vec[i].substr(0,idx).c_str(),tmp_vec[i].substr(idx+1).c_str());
+			mcf.parameters.insert(make_pair(tmp_vec[i].substr(0,idx),atoi(tmp_vec[i].substr(idx+1).c_str())));
+		}
+
+	}
+	//字段检查
+	if(mcf.keys_vec.size()<1 || mcf.mapkeys.size()<1){
+		update_flg = 0;
+		LOG_ERROR("lushan model obtained error data: lushan keys num:%d mapkeys num :%d",mcf.keys_vec.size(),mcf.mapkeys.size());
+	}
+FREE_MODEL:
+	if (lskeys != NULL) delete lskeys[0];
+	if (lskeys != NULL ) delete lskeys;
+	LOG_ERROR("lushan model obtain finish");
+	return update_flg;
+
 }
 /**
  * 模型更新函数
@@ -346,34 +446,109 @@ FREE_MODULE:
  * @return
  */
 int PromoteFansAlgorithmInterface::user_ad_ctr_estimate(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num){
+	LOG_ERROR("user_ad_ctr_estimate begin...");
 	//用户数据
 	int gender = ai->gender;
 	int os = ai->os;
 	//广告主各项ctr数据
-	map<string, Ad_Info> ad_infos = get_ad_infos(input_vec);
+	map<uint64_t, Ad_Info> ad_infos = get_ad_infos(input_vec);
+	Ad_Info default_ad_info = get_default_ad_info();
 	//模型数据
 	model_read_ptr = read_model();
-	int count=0;
-	map<int, float> sort_ad;
-	//特征映射，拼接key，查找对应的映射
-	//查找权重
-	//计算分值
-	map<string, Ad_Info>::iterator iter;
-	for(iter = ad_infos.begin(); iter != ad_infos.end();iter++){
-		Ad_Info ai = iter->second;
-		float score = getAdScore(ai,model_read_ptr) + getGenderScore(gender, ai, model_read_ptr) + getPlatformScore(os, ai, model_read_ptr);
-		sort_ad.insert(make_pair(count, score));
-		count++;
-	}
-	//结果放到output_vec中
-	if (sort_ad.size() >= 1){
-		vector<pair<int, float> > tmp(sort_ad.begin(), sort_ad.end());
-		sort(tmp.begin(), tmp.end(), dict_compare);
-		if (sort_ad.size()<3) num = sort_ad.size();
-		for (int i = 0;i<num;i++){
-			output_vec.push_back(input_vec[tmp[i].first]);
+
+	if(ad_infos.size()>0){
+		int index = 0;//输入数据的顺序
+		map<int, float> sort_ad;
+		//特征映射，拼接key，查找对应的映射
+		//查找权重
+		//计算分值
+		for(map<uint64_t, Ad_Info>::iterator iter = ad_infos.begin(); iter != ad_infos.end();iter++){
+			Ad_Info ai = iter->second;
+			float adScore = getAdScore(ai, model_read_ptr, default_ad_info);
+			float genderScore = getGenderScore(gender, ai, model_read_ptr, default_ad_info);
+			float platformScore = getPlatformScore(os, ai, model_read_ptr, default_ad_info);
+
+			float score =  adScore + genderScore + platformScore;
+			LOG_ERROR("final index: %d, adid: %u, adScore: %f", index,ai.adid, score);
+			sort_ad.insert(make_pair(index, score));
+			index++;
 		}
-		LOG_ERROR("BEST:%lf", tmp[0].second);
+		//结果放到output_vec中
+		if (sort_ad.size() >= 1){
+			vector<pair<int, float> > tmp(sort_ad.begin(), sort_ad.end());
+			sort(tmp.begin(), tmp.end(), dict_compare);
+			if (sort_ad.size() < num) {
+				num = sort_ad.size();
+			}
+			for (int i = 0;i<num;i++){
+				LOG_ERROR("index: %d",tmp[i].first);
+				User_Order_Ad * ft = (User_Order_Ad*)input_vec[tmp[i].first];
+				LOG_ERROR("tmp %d, second: %f",i , tmp[i].second);
+				int sco = (int)tmp[i].second * 100000.0;
+				ft->adscore = sco;
+				LOG_ERROR("final adid: %u, sco: %u, adScore: %u", ft->uid, sco,  ft->adscore);//结果展示一下
+				output_vec.push_back(input_vec[tmp[i].first]);
+			}
+		}else{
+			LOG_ERROR("no result");
+		}
+	}else{
+		LOG_ERROR("lushan connect error!");
+	}
+	return 1;
+}
+int PromoteFansAlgorithmInterface::user_ad_ctr_estimate2(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int ad_num){
+	LOG_ERROR("user_ad_ctr_estimate begin... adnum: %d", ad_num);
+	if (input_vec.size() == 0) {
+		LOG_ERROR("no input");
+		return 1;
+	}
+	//用户数据
+	int gender = ai->gender;
+	int os = ai->os;
+	//广告主各项ctr数据
+	map<uint64_t, Ad_Info> ad_infos = get_ad_infos(input_vec);
+	LOG_ERROR("get ad info done");
+	Ad_Info default_ad_info = get_default_ad_info();
+	LOG_ERROR("get default ad info done");
+	//模型数据
+	model_read_ptr = read_model();
+
+	if(ad_infos.size()>0){
+		//特征映射，拼接key，查找对应的映射
+		//查找权重
+		//计算分值
+		vector<User_Order_Ad*> tmp_new;
+		for(VEC_CAND::const_iterator it = input_vec.begin(); it!=input_vec.end(); it++){
+			User_Order_Ad * ft = (User_Order_Ad*)(*it);
+			if(ad_infos.find(ft->uid)==ad_infos.end()){
+				continue;
+			}
+			Ad_Info ai = ad_infos[ft->uid];
+			float adScore = getAdScore(ai, model_read_ptr, default_ad_info);
+			float genderScore = getGenderScore(gender, ai, model_read_ptr, default_ad_info);
+			float platformScore = getPlatformScore(os, ai, model_read_ptr, default_ad_info);
+
+			float score =  adScore + genderScore + platformScore;
+			ft->adscore=floor(score * 100000) ;
+			LOG_ERROR("adid: %u, adScore: %u",ai.adid, ft->adscore);
+			tmp_new.push_back(ft);
+		}
+
+		//结果放到output_vec中
+//		vector<candidate_item_t*> tmp(input_vec.begin(), input_vec.end());
+
+		sort(tmp_new.begin(), tmp_new.end(), User_Order_Ad_compare);
+		if (input_vec.size() < ad_num) {
+			ad_num = input_vec.size();
+		}
+		for (int i = 0; i < ad_num; i++) {
+			User_Order_Ad * ft = tmp_new[i];
+			LOG_ERROR("final adid: %u,  adScore: %u", ft->uid, ft->adscore);//结果展示一下
+			output_vec.push_back(ft);
+		}
+	}else{
+		LOG_ERROR("lushan connect error!");
 	}
 	return 1;
 }
@@ -385,50 +560,61 @@ int PromoteFansAlgorithmInterface::user_ad_ctr_estimate(const ACCESS_INFO* ai, c
  * @param input_vec
  * @return
  */
-map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_infos(const VEC_CAND& input_vec){
-	map<string, Ad_Info> res_ad_infos;
+map<uint64_t, Ad_Info> PromoteFansAlgorithmInterface::get_ad_infos(const VEC_CAND& input_vec){
+	map<uint64_t, Ad_Info> res_ad_infos;
 	int dbno = ADER_PROFILE_DB_NO;
 	//取lushan数据
 	LOG_ERROR("get ad info");
 	DbInterface* p_insuff_order_interface = p_db_company_->get_db_interface("NONFANS_USER_PROFILE");
 	if(NULL == p_insuff_order_interface){
-		LOG_ERROR("lushan connect error!");
-		return -1;
+		return res_ad_infos;
 	}
+	string COMMA = ",";
 	uint16_t key_size = input_vec.size() + 1;
 	char** keystr = new char*[key_size];
 	for(uint16_t i = 0; i < key_size; i++)
 		keystr[i] = new char[256];
 	int index = 0;
 	//拼接广告id
-
 	for(VEC_CAND::const_iterator it = input_vec.begin(); it!=input_vec.end(); it++){
 		User_Order_Ad * ft = (User_Order_Ad*)(*it);
-		sprintf(keystr[index++],"%u-%"PRIu64"", dbno, ft->uid);//order_id info;
+		sprintf(keystr[index++],"%u-%"PRIu64"", dbno, ft->uid);//数据库库号， 广告主id
 	}
 
-//	sprintf(keystr[index],"%u-1", dbno);//默认ctr
 	map<uint64_t, const char*> result;
-	int redis_flag = ((McDbInterface *)p_insuff_order_interface)->mget(1, keystr, key_size, result);
-	if(redis_flag != 1){
-		LOG_ERROR("redis_flag_error");
-		return res_ad_infos;
+	LOG_ERROR("pre pare");
+	int mc_flag = ((McDbInterface *)p_insuff_order_interface)->mget(1, keystr, key_size, result);
+	LOG_ERROR("db done");
+
+	std::map<uint64_t, const char*>::iterator iter;
+	 for( iter = result.begin(); iter!=result.end(); iter++){
+		 LOG_ERROR("ADID: %u, ctr: %s", iter->first, iter->second);
+	 }
+	if(mc_flag != 1){
+		LOG_ERROR("mc_flag_error");
+		goto FREE_MODULE;
 	}
 	//拼接广告数据到res_ad_infos中
-	string token = ",";
-	for(map<uint64_t, const char*>::const_iterator iter = result.begin();iter != result.end(); iter++){
-		LOG_ERROR("LUSHAN %lld:%s", iter->first, iter->second);
+	for(VEC_CAND::const_iterator it = input_vec.begin(); it!=input_vec.end(); it++){
+		User_Order_Ad * ft = (User_Order_Ad*)(*it);
 		Ad_Info ai;
-		string s = iter->second;
+		string s;
+		if(result.find(ft->uid)!=result.end()){
+			s = result[ft->uid];
+		}else if(result.find(1)!=result.end()){//默认值
+			s = result[1];
+		}else{//如果数据库里默认值也没有
+			s = "0.00073,0.000678,0.000585,0.000416,0.000907,0.000339";
+		}
 		vector<string> fileds;
-		SplitString(s, token, fileds);
+		SplitString(s, COMMA, fileds);
 		string ctr = fileds[0];
 		string male_ctr = fileds[1];
 		string female_ctr =fileds[2];
 		string ios_ctr =fileds[3];
 		string android_ctr = fileds[4];
 		string other_ctr = fileds[5];
-		ai.adid = iter->first;
+		ai.adid = ft->uid;
 		ai.ctr = ctr;
 		ai.male_ctr = male_ctr;
 		ai.female_ctr = female_ctr;
@@ -436,8 +622,9 @@ map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_infos(const VEC_CAND&
 		ai.android_ctr = android_ctr;
 		ai.other_ctr = other_ctr;
 
-		res_ad_infos.insert(make_pair(iter->first, ai));
+		res_ad_infos.insert(make_pair(ft->uid, ai));
 	}
+FREE_MODULE:
 	//释放内存
 	for (uint16_t i = 0; i < key_size; i++) {
 		delete[] keystr[i];
@@ -456,7 +643,7 @@ model_data* PromoteFansAlgorithmInterface::read_model(){
 	//ctr模型
 	pthread_mutex_lock(&p_lock_fans_economy);
 	LOG_ERROR("addlock search:%d",tid_fans_economy);
-	model_read_ptr = model_ptr[1];
+	model_read_ptr = model_ptr[0];
 	LOG_ERROR("releaselock search:%d",tid_fans_economy);
 	//LOG_ERROR("LOAD MODEL BEGIN LOCK1 SLEEP PTHREAD:%d",tid_fans_economy);
 	pthread_mutex_unlock(&p_lock_fans_economy);
@@ -477,12 +664,12 @@ int PromoteFansAlgorithmInterface::search_feature_index(string& key, model_data*
  * @param feature_name
  * @param value
  * @param read_ptr
- * @param value_type
+ * @param value_type 0是浮点数，非0是整数。
  * @return
  */
 float PromoteFansAlgorithmInterface::search_weights(string feature_name, string value,model_data *read_ptr,int value_type){
 	//value_type 0：float，1：int
-	LOG_ERROR("MODEL UPDATE CHECK: search_weights");
+	LOG_ERROR("MODEL UPDATE CHECK: search_weights, feature name: %s, value: %s",feature_name.c_str(), value.c_str());
 	if (read_ptr == NULL || read_ptr->weights == NULL ){
 		LOG_ERROR("MODEL UPDATE CHECK: read_ptr is NULL");
 		return 0.0;
@@ -510,21 +697,32 @@ float PromoteFansAlgorithmInterface::search_weights(string feature_name, string 
 			val[val_length - back_i] = 0;
 		}
 		key = feature_name+"_" + val;
+
 		k = search_feature_index(key,read_ptr);
 		++back_i;
 	}
 	if(-1 != k) {
-		LOG_ERROR("MODEL UPDATE CHECK:weights-%f",atof(read_ptr->weights[k]));
+		LOG_ERROR("MODEL UPDATE CHECK:weights %s: %f",key.c_str(),atof(read_ptr->weights[k]));
 		return atof(read_ptr->weights[k]);
+	}else{
+		LOG_ERROR("k== -1: %s, value: %s",key.c_str());
 	}
 	return -10000;
 }
-
-float PromoteFansAlgorithmInterface::getAdScore(Ad_Info ai, model_data *model_read_ptr){
+/**
+ * 获取广告主平均ctr
+ * @param ai
+ * @param model_read_ptr
+ * @return
+ */
+float PromoteFansAlgorithmInterface::getAdScore(Ad_Info ai, model_data *model_read_ptr, Ad_Info default_ad_info){
 	float res_score;
 	string feature_name;
 	feature_name="ctr";
-	res_score = search_weights(feature_name,ai.ctr,model_read_ptr,1);
+	res_score = search_weights(feature_name,ai.ctr,model_read_ptr,VALUE_TYPE);
+	if (int(res_score) == FAIL_WEIGHT) {
+		res_score = atof(default_ad_info.ctr.c_str());
+	}
 	return res_score;
 }
 /**
@@ -534,16 +732,24 @@ float PromoteFansAlgorithmInterface::getAdScore(Ad_Info ai, model_data *model_re
  * @param model_read_ptr
  * @return
  */
-float PromoteFansAlgorithmInterface::getGenderScore(int gender, Ad_Info ai, model_data *model_read_ptr){
+float PromoteFansAlgorithmInterface::getGenderScore(int gender, Ad_Info ai, model_data *model_read_ptr, Ad_Info default_ad_info){
 	float res_score;
 	string feature_name;
-	if(gender==1){
+	if(gender==0){
 		feature_name="male";
-		res_score = search_weights(feature_name,ai.male_ctr,model_read_ptr,1);
+		res_score = search_weights(feature_name,ai.male_ctr,model_read_ptr,VALUE_TYPE);
+		if (int(res_score) == FAIL_WEIGHT) {
+			res_score = atof(default_ad_info.male_ctr.c_str());
+		}
 	}else{
 		feature_name="female";
-		res_score = search_weights(feature_name,ai.female_ctr,model_read_ptr,1);
+		res_score = search_weights(feature_name,ai.female_ctr,model_read_ptr,VALUE_TYPE);
+
+		if (int(res_score) == FAIL_WEIGHT) {
+			res_score = atof(default_ad_info.female_ctr.c_str());
+		}
 	}
+
 	return res_score;
 }
 /**
@@ -554,18 +760,90 @@ float PromoteFansAlgorithmInterface::getGenderScore(int gender, Ad_Info ai, mode
  * @param model_read_ptr
  * @return
  */
-float PromoteFansAlgorithmInterface::getPlatformScore(int platform, Ad_Info ai, model_data *model_read_ptr){
+float PromoteFansAlgorithmInterface::getPlatformScore(int platform, Ad_Info ai, model_data *model_read_ptr, Ad_Info default_ad_info){
 	float res_score;
 	string feature_name;
 	if(platform==1){
 		feature_name="ios";
-		res_score = search_weights(feature_name,ai.ios_ctr,model_read_ptr,1);
+		res_score = search_weights(feature_name,ai.ios_ctr,model_read_ptr,VALUE_TYPE);
+		if (int(res_score) == FAIL_WEIGHT) {
+			res_score = atof(default_ad_info.ios_ctr.c_str());
+		}
 	}else if(platform==2){
 		feature_name="android";
-		res_score = search_weights(feature_name,ai.android_ctr,model_read_ptr,1);
+		res_score = search_weights(feature_name,ai.android_ctr,model_read_ptr,VALUE_TYPE);
+		if (int(res_score) == FAIL_WEIGHT) {
+			res_score = atof(default_ad_info.android_ctr.c_str());
+		}
 	}else{
 		feature_name="other";
-		res_score = search_weights(feature_name,ai.other_ctr,model_read_ptr,1);
+		res_score = search_weights(feature_name,ai.other_ctr,model_read_ptr,VALUE_TYPE);
+		if (int(res_score) == FAIL_WEIGHT) {
+			res_score = atof(default_ad_info.other_ctr.c_str());
+		}
 	}
 	return res_score;
+}
+Ad_Info PromoteFansAlgorithmInterface::get_default_ad_info(){
+	Ad_Info res;
+	string s ;
+	vector<string> fileds;
+	string ctr;
+	string male_ctr;
+	string female_ctr;
+	string ios_ctr;
+	string android_ctr;
+	string other_ctr;
+	LOG_ERROR("get default ad info");
+	DbInterface* p_insuff_order_interface = p_db_company_->get_db_interface("NONFANS_USER_PROFILE");
+	if(NULL == p_insuff_order_interface){
+		return res;
+	}
+	string COMMA = ",";
+	uint16_t key_size = 1;
+	char** keystr = new char*[key_size];
+	for(uint16_t i = 0; i < key_size; i++){
+		keystr[i] = new char[256];
+	}
+	int index = 0;
+
+	sprintf(keystr[index],"%u-1", ADER_PROFILE_DB_NO);//默认ctr
+	map<uint64_t, const char*> result;
+	int redis_flag = ((McDbInterface *)p_insuff_order_interface)->mget(1, keystr, key_size, result);
+	if(redis_flag != 1){
+		LOG_ERROR("redis_flag_error");
+		goto FREE_MODULE;
+	}
+	if(result.find(1)!=result.end()){
+		s = result[1];
+	}else{
+		s = "0.00073,0.000678,0.000585,0.000416,0.000907,0.000339";
+	}
+	//拼接广告数据到res_ad_infos中
+	SplitString(s, COMMA, fileds);
+
+	ctr = fileds[0];
+	male_ctr = fileds[1];
+	female_ctr =fileds[2];
+	ios_ctr =fileds[3];
+	android_ctr = fileds[4];
+	other_ctr = fileds[5];
+	res.adid = 1;
+	res.ctr = ctr;
+	res.male_ctr = male_ctr;
+	res.female_ctr = female_ctr;
+	res.ios_ctr = ios_ctr;
+	res.android_ctr = android_ctr;
+	res.other_ctr = other_ctr;
+
+	FREE_MODULE:
+		//释放内存
+		for (uint16_t i = 0; i < key_size; i++) {
+			delete[] keystr[i];
+		}
+		if (keystr != NULL) {
+			delete[] keystr;
+		}
+		return res;
+	return res;
 }

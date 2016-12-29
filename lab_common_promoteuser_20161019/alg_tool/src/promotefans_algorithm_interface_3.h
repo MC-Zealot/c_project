@@ -5,10 +5,9 @@
 #include "user_ad.h"
 #include <pthread.h>
 #include <unistd.h>
-typedef std::map<string,int> Map;
+typedef map<string,int> Map;
 
-const uint16_t MODEL_LR_DB_NO = 21;		//lushan
-const uint16_t ADER_PROFILE_DB_NO = 3;		//lushan
+
 void SplitString(string& src, string& token, vector<string>& sp){
 	string::size_type start, end;
 	start = 0;
@@ -33,7 +32,8 @@ typedef struct _model_data{
 	char** weights;
 	Map** mapArray;
 	int indexkey;
-	int mapNum,weightsNum;
+	int mapNum;
+	int weightsNum;
 }model_data;
 
 typedef struct _model_conf{
@@ -70,7 +70,7 @@ float getRandomFloat()
 }
 class Ad_Info{
 public:
-	string adid;//广告主id
+	uint64_t adid;//广告主id
 	string ctr;//广告主ctr（天）
 	string ios_ctr;
 	string android_ctr;
@@ -92,6 +92,10 @@ class PromoteFansAlgorithmInterface :public AlgorithmInterface{
 		vector<string> feature_name_list;
 		int *model_flg;//用于标记本线程是否可以创建线程，以及创建后负责创建内存的释放
 		model_data *model_read_ptr;
+		static const uint16_t MODEL_LR_DB_NO = 21;		//lushan
+		static const uint16_t ADER_PROFILE_DB_NO = 3;		//lushan
+		static const float FAIL_WEIGHT = -10000;
+		static const int VALUE_TYPE = 0;//ctr数据类型
 		PromoteFansAlgorithmInterface(DbCompany*& p_db_company, int interface_id):
 			AlgorithmInterface(p_db_company, interface_id){
 				LOG_ERROR("init PromoteFansAlgorithmInterface.");
@@ -108,7 +112,7 @@ class PromoteFansAlgorithmInterface :public AlgorithmInterface{
 					*model_flg = 1;
 				}
 				pthread_mutex_unlock(&p_lock_fans_economy);
-				int model_num =2;
+				int model_num =1;
 				//创建模型更新线程
 				if( *model_flg == 1){
 					//申请初始模型内存，以免释放内存错误
@@ -175,11 +179,13 @@ class PromoteFansAlgorithmInterface :public AlgorithmInterface{
 		int search_feature_index(string &key,model_data* read_ptr);
 		float search_weights(string feature_name, string value,model_data *read_ptr,int value_type);
 		int user_ad_ctr_estimate(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num);
-		map<string, Ad_Info> PromoteFansAlgorithmInterface::get_ad_infos(const VEC_CAND& input_vec);
+		int user_ad_ctr_estimate2(const ACCESS_INFO* ai, const VEC_CAND& input_vec,VEC_CAND& output_vec, int num);
+		map<uint64_t, Ad_Info> get_ad_infos(const VEC_CAND& input_vec);
 		model_data* read_model();
-		float getGenderScore(int gender, Ad_Info ai, model_data *model_read_ptr);
-		float getPlatformScore(int platform, Ad_Info ai, model_data *model_read_ptr);
-		float getAdScore(Ad_Info ai, model_data *model_read_ptr);
+		float getGenderScore(int gender, Ad_Info ai, model_data *model_read_ptr, Ad_Info default_ad_info);
+		float getPlatformScore(int platform, Ad_Info ai, model_data *model_read_ptr, Ad_Info default_ad_info);
+		float getAdScore(Ad_Info ai, model_data *model_read_ptr, Ad_Info default_ad_info);
+		Ad_Info get_default_ad_info();
 };
 
 #endif
