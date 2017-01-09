@@ -25,13 +25,13 @@ typedef struct Access_Info: public AccessInfo {
 typedef struct User_Order_Ad:public candidate_item_t {
         User_Order_Ad():order_id(""), create_time(0), expire_time(0), 
 	target_num(0), adscore(0), adtype(0), source_type(0){}
-	
+	//tid:uid广告主的id
 	string order_id;                                         // 订单id
 	uint64_t create_time;                           // 订单起始时间
 	uint64_t expire_time;                           // 订单终止时间
 	int target_num;                                         // 目标涨粉数
 	uint64_t adscore;                               // 广告得分，20150609新增
-	uint32_t adtype;                                        // 广告主的广告类型
+	uint32_t adtype;                                        // 广告主的广告类型 ad_flag
 	uint32_t source_type;                //标示用户的来源，是普通用户，蓝v用户，相似账号的用户
 }USER_ORDER_AD;
 

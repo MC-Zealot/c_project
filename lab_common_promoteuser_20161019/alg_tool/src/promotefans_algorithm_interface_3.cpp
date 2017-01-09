@@ -184,6 +184,7 @@ int PromoteFansAlgorithmInterface::parse_model_parameters(model_conf &mcf,int db
 	try{
 		lskeys[0] = new char[128]();
 	}catch (const char* msg) {
+		cerr << msg << endl;
 		goto FREE_MODEL;
 	}
 	sprintf(lskeys[0],"%d-%d",db_num,key);
@@ -212,7 +213,6 @@ int PromoteFansAlgorithmInterface::parse_model_parameters(model_conf &mcf,int db
 		//check 分割后 k-v 都不为空
 		if ( idx == -1 || idx ==0 || idx+2>tmp_vec[i].length()){
 			continue;
-			goto FREE_MODEL;
 		}
 		LOG_ERROR("lushan model obtain 2 parameters %s,%s",tmp_vec[i].substr(0,idx).c_str(),tmp_vec[i].substr(idx+1).c_str());
 		if (strcmp(tmp_vec[i].substr(0,idx).c_str(),"db_key") == 0){

@@ -1,9 +1,0 @@
-[ALG_INFO]
-SO_SLIT_CHAR=44
-SO_NAMES=INTER
-SO_FOLDER=../lib/
-
-[INTER]
-UID_PLAN=0,inter_0,|1,inter_1,|-1,InterAlgorithmInterface,|-2,inter_1,INTERSECTION_USER_DB
-;-2表示白名单,同时后面会有白名单列表,-1表示默认,其他表示用户尾号控制
-
