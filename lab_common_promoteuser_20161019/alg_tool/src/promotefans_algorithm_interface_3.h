@@ -142,7 +142,7 @@ class PromoteFansAlgorithmInterface :public AlgorithmInterface{
 			//该线程创建的模型，负责释放模型内存
 			if (*model_flg == 1){
 				pthread_mutex_destroy(&p_lock_fans_economy);
-				for(int i=0;i<2;i++){
+				for(int i=0;i<1;i++){
 					if (model_ptr[i] != NULL){
 						if(model_ptr[i]->weights != NULL){
 							for(uint16_t j=0;j<model_ptr[i]->weightsNum;++j){

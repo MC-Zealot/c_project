@@ -24,8 +24,14 @@ int PromoteFansAlgorithmInterface::algorithm_core_new(uint64_t req_id, const Acc
 		return 1;
 	}
 
-	user_ad_history_ctr(ai, input_vec, output_vec, ai->ad_num);
-//	user_ad_ctr_estimate(ai, input_vec, output_vec, ai->ad_num);
+//	user_ad_history_ctr(ai, input_vec, output_vec, ai->ad_num);
+	try {
+		user_ad_ctr_estimate(ai, input_vec, output_vec, ai->ad_num);
+	} catch (const char* msg) {
+		cerr << msg << endl;
+		LOG_ERROR("",msg);
+
+	}
 
 	return 1;
 }
@@ -174,8 +180,12 @@ int PromoteFansAlgorithmInterface::parse_model_parameters(model_conf &mcf,int db
 	mcf.keys_vec.clear();
 	mcf.mapkeys.clear();
 	mcf.arraykey = -1;
-	char** lskeys = new char*;
-	lskeys[0] = new char[128]();
+	char** lskeys = new char*[1];
+	try{
+		lskeys[0] = new char[128]();
+	}catch (const char* msg) {
+		goto FREE_MODEL;
+	}
 	sprintf(lskeys[0],"%d-%d",db_num,key);
 	//obtain lushan data
 	if(NULL == p_insuff_order_interface){
@@ -553,6 +563,10 @@ map<uint64_t, Ad_Info> PromoteFansAlgorithmInterface::get_ad_infos(const VEC_CAN
 		}
 		vector<string> fileds;
 		SplitString(s, COMMA, fileds);
+		if(fileds.size()<6){//如果数据库有的数据长度太小，有问题
+			s = "0.00073,0.000678,0.000585,0.000416,0.000907,0.000339";
+			SplitString(s, COMMA, fileds);
+		}
 		string ctr = fileds[0];
 		string male_ctr = fileds[1];
 		string female_ctr =fileds[2];
@@ -766,7 +780,10 @@ Ad_Info PromoteFansAlgorithmInterface::get_default_ad_info(){
 	}
 	//拼接广告数据到res_ad_infos中
 	SplitString(s, COMMA, fileds);
-
+	if(fileds.size()<6){//如果数据库有的数据长度太小，有问题
+		s = "0.00073,0.000678,0.000585,0.000416,0.000907,0.000339";
+		SplitString(s, COMMA, fileds);
+	}
 	ctr = fileds[0];
 	male_ctr = fileds[1];
 	female_ctr =fileds[2];
