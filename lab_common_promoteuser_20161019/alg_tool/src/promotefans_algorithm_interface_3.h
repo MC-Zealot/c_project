@@ -29,18 +29,21 @@ typedef struct _lushan{
 }LUSHAN;
 
 typedef struct _model_data{
-	char** weights;
-	Map** mapArray;
-	int indexkey;
-	int mapNum;
-	int weightsNum;
+	char** weights;//模型权值，char数组表示字符串
+	Map** mapArray;//键值对，包括模型映射数据、默认值、阈值等等
+	int indexkey;//模型离散的key
+	int mapNum;//
+	int weightsNum;//6 * 1000
 }model_data;
 
+/**
+ *模型配置文件
+ */
 typedef struct _model_conf{
 	vector<string> mapkeys;
 	vector<string> keys_vec;
-	int arraykey;
-	int indexkey;
+	int arraykey;//权值的key
+	int indexkey;//配置文件中，离散映射数据的key
 	string update_f;
 	map<string,int> parameters;
 }model_conf;

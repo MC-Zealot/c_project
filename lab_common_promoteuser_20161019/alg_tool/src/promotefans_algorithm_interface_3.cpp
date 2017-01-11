@@ -371,8 +371,12 @@ void PromoteFansAlgorithmInterface::update_model(model_conf &mcf,model_data** co
 			idx = tmp_vector[i].find(':');
 			if (idx != -1 && idx >2 && idx+1 <= tmp_vector[i].size()){
 				//if (debug ==1) LOG_ERROR("MODEL UPDATE MAP DATA ITERM CHECK: key:%s, value:%s",tmp_vector[i].substr(0,idx).c_str(),tmp_vector[i].substr(idx+1).c_str());
-				(map_i[m_pos])->insert(make_pair(tmp_vector[i].substr(0,idx).c_str(),atoi(tmp_vector[i].substr(idx+1).c_str())));
-				feature_newdata_num++;
+				if(m_pos < m_ptr->mapNum && m_pos >=0){
+					(map_i[m_pos])->insert(make_pair(tmp_vector[i].substr(0,idx).c_str(),atoi(tmp_vector[i].substr(idx+1).c_str())));
+					feature_newdata_num++;
+				}else{
+					LOG_ERROR("input error m_pos :>= mapnum");
+				}
 			}
 		}
 		if(mcf.indexkey == qkey) m_ptr->indexkey = m_pos;
@@ -611,9 +615,9 @@ model_data* PromoteFansAlgorithmInterface::read_model(){
 
 int PromoteFansAlgorithmInterface::search_feature_index(string& key, model_data* read_ptr){
 	int index = -1,debug = 0;
-	if(read_ptr->mapArray[read_ptr->indexkey]->find(key.c_str()) != read_ptr->mapArray[0]->end()){
-		index = (*(read_ptr->mapArray[0]))[key.c_str()];
-		if (1 == debug) LOG_ERROR("MODEL UPDATE CHECK MAP COMPARE :key_s-%s,value:%d",key.c_str(),(*(read_ptr->mapArray[0]))[key.c_str()]);
+	if(read_ptr->mapArray[read_ptr->indexkey]->find(key.c_str()) != read_ptr->mapArray[read_ptr->indexkey]->end()){
+		index = (*(read_ptr->mapArray[read_ptr->indexkey]))[key.c_str()];
+		if (1 == debug) LOG_ERROR("MODEL UPDATE CHECK MAP COMPARE :key_s-%s,value:%d",key.c_str(),(*(read_ptr->mapArray[read_ptr->indexkey]))[key.c_str()]);
 	}
 	return index;
 }
