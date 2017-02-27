@@ -56,11 +56,11 @@ vector<int> twoSum(vector<int>& nums, int target) {
 vector<int> twoSum2(vector<int>& nums, int target) {
 	vector<int> res;
 	map<int, int> m;		
-	map<int, int>::iterator iter;
+	map<int, int>::iterator it;
 	for(int i = 0; i < nums.size(); i++) {
-		map<int, int>::iterator it = m.find(target - nums[i]);
+		it = m.find(target - nums[i]);
 		if(it != m.end()){
-			res.push_back(m[target - nums[i]]);				
+			res.push_back(it->second);				
 			res.push_back(i);				
 			return res;
 		}
